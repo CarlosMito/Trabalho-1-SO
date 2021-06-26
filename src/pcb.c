@@ -25,35 +25,14 @@ PCB *copyPCB(PCB *pcb)
     return copy;
 }
 
-void printPReady()
-{
-}
-
-void printPBlocked()
-{
-}
-
-// PCB emptyPCB()
-// {
-//     PCB pcb;
-
-//     pcb.pid = 0;
-//     pcb.ppid = 0;
-//     pcb.pc = 0;
-//     pcb.program = emptyProgram();
-//     pcb.startTime = 0;
-//     pcb.cpuTime = 0;
-//     pcb.priority = 0;
-
-//     return pcb;
-// }
-
 PCB *initializePCBFromFile(char *path)
 {
     PCB *pcb;
 
     pcb = (PCB *)malloc(sizeof(PCB));
     pcb->program = parseFile(path);
+
+    pcb->priority = pcb->program.size;
 
     return pcb;
 }

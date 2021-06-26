@@ -44,8 +44,10 @@ int executeCPU(CPU *cpu, PCBList *list, int nextID, int systemTime)
         forked->ppid = cpu->pcb->pid;
         forked->cpuTime = 0;
         forked->pc++;
+        forked->priority--;
 
         cpu->pcb->pc += 1 + current.integer;
+        cpu->pcb->priority = cpu->pcb->program.size - cpu->pcb->pc;
 
         list->pcbs[nextID] = forked;
         list->length++;
@@ -59,24 +61,26 @@ int executeCPU(CPU *cpu, PCBList *list, int nextID, int systemTime)
         cpu->pcb->program = parseFile(path);
         cpu->pcb->pc = 0;
         cpu->pcb->value = 0;
+        cpu->pcb->priority = cpu->pcb->program.size;
 
         return CHANGE_PROCESS;
 
     case 'E':
-
         return TERMINATE_PROCESS;
 
     case 'B':
         // Bloqueia esse processo
         cpu->pcb->pc++;
+        cpu->pcb->priority = cpu->pcb->program.size - cpu->pcb->pc;
         return BLOCK_PROCESS;
 
     default:
         return UNKNOWN_COMMAND;
     }
 
-    // Incrementa o Contador de Programa e o Tempo de Sistema após uma instrução
-    (cpu->pcb->pc)++;
+    // Incrementa o Contador de Programa e diminui a Prioridade após uma instrução
+    cpu->pcb->pc++;
+    cpu->pcb->priority = cpu->pcb->program.size - cpu->pcb->pc;
 
     return EXIT_SUCCESS;
 }

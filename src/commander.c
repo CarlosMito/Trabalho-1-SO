@@ -43,7 +43,6 @@ int main(int argc, char *argv[])
 
         do
         {
-            // Nos requisitos tá especificando 1s, mas para testar fica muito lento
             sleep(1);
             printf("Insira um comando: ");
             fflush(stderr);
@@ -103,10 +102,21 @@ int main(int argc, char *argv[])
  * 16 | (2: 2) - 120
  * 17 | (2: 3) - 40
  * 18 | (2: 4) - Bloqueou
-
-
-
-
-
-
+ *
+ * ESCALONAMENTO
+ *  
+ * O Algoritmo de Escalonamento escolhido foi o SRTN (Shortest Remaining Time Next), como as instruções
+ * que um processo simulado é capaz de realizar são triviais, não envolvem entrada de dados, e possuem
+ * tempos de execução iguais (em relação ao tempo simulado, pois levando em consideração o tempo real os
+ * comandos R e B podem variar dependendo do tamanho do programa escolhido para a troca de imagem e do tamanho
+ * da lista de bloqueados, respectivamente), então o cálculo para o tempo de execução restante não é nada complexo.
+ * 
+ * As prioridades dos processos só irão mudar quando os mesmos estiverem dentro da CPU, dessa forma, a lista de 
+ * processos prontos se manterá ordenada sem muitas complicações. Lembrando que a ordem de prioridade é inversa,
+ * ou seja, quanto menor o valor, maior a prioridade sobre outros processos, e vice-versa.
+ * 
+ * Os processos bloqueados são armazenados utilizando o conceito de FIFO (First In First Out).
+ * 
+ * Pelo o que está descrito nos requisitos, o escalonamento deve ocorrer após a execução de uma instrução do
+ * processo na CPU.
  */

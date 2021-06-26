@@ -35,19 +35,33 @@ void printFromList(PCBList *table, LinkedList *list)
         printPCB(table->pcbs[test[i]]);
 }
 
+void debug(Manager *manager)
+{
+    printf("READY: ");
+    printLinkedList(manager->ready);
+    printf("BLOCKED: ");
+    printLinkedList(manager->blocked);
+    printf("IDS: ");
+    printLinkedList(manager->ids);
+
+    printf("NEXT ID: %d", manager->nextID);
+
+    printf("\n");
+}
+
 // @brief tTes
 // @param pid: PID do processo que irá assumir a CPU
 void changeContext(Manager *manager, int pid)
 {
-    if (pid < 0)
-    {
-        manager->cpu->processTime = 0;
-        manager->cpu->lastTime = 0;
-        manager->cpu->pcb = NULL;
-        return;
-    }
+    PCB *target;
 
-    PCB *target = manager->list->pcbs[pid];
+    if (pid < 0)
+        return;
+
+    printf("Colocando processo na CPU: (PID = %d)\n", pid);
+
+    manager->executing = pid;
+    target = manager->list->pcbs[pid];
 
     manager->cpu->processTime = 0;
     manager->cpu->lastTime = target->cpuTime;
@@ -55,10 +69,31 @@ void changeContext(Manager *manager, int pid)
 }
 
 // Função de Escalonamento: Retorna o ID do processo que será executado pela CPU.
-int schedule(LinkedList *ready)
+int schedule(Manager *manager)
 {
-    // Basta arrumar os valores de prioridade ao salvar um nó salvo
-    return pollLinkedList(ready);
+    int idSRT, cpuPriority, readyPriority;
+
+    // Caso a CPU esteja vazia, retorna o ID do primeiro processo pronto
+    if (!manager->cpu->pcb)
+        return pollLinkedList(manager->ready);
+
+    idSRT = firstLinkedList(manager->ready);
+
+    // Caso a lista de processos prontos não esteja vazia, realiza um escalonamento
+    // preemptivo com base no tempo de execução restante dos processos
+    if (idSRT != -1)
+    {
+        cpuPriority = manager->cpu->pcb->priority;
+        readyPriority = manager->list->pcbs[idSRT]->priority;
+
+        if (readyPriority < cpuPriority)
+        {
+            insertLinkedList(manager->ready, manager->cpu->pcb->pid, manager->cpu->pcb->priority);
+            return pollLinkedList(manager->ready);
+        }
+    }
+
+    return -1;
 }
 
 void initializeManager(Manager *manager)
@@ -71,7 +106,6 @@ void initializeManager(Manager *manager)
     manager->blocked = (LinkedList *)malloc(sizeof(LinkedList));
     manager->ids = (LinkedList *)malloc(sizeof(LinkedList));
 
-    manager->executing = 0;
     manager->time = 0;
 
     initializeCPU(manager->cpu);
@@ -184,61 +218,12 @@ void clearIDList(PCBList *list, LinkedList *ids)
         clearLinkedList(ids);
 }
 
-void automaticTest(Manager *manager)
-{
-    int status;
-
-    for (int i = 0; i < 13; i++)
-    {
-        status = executeCPU(manager->cpu, manager->list, manager->nextID, manager->time);
-
-        if (status == FORK_PROCESS)
-        {
-            // Insere o novo processo na Lista de Prontos
-            insertLinkedList(manager->ready, manager->nextID, manager->list->pcbs[manager->nextID]->priority);
-
-            manager->nextID = NEXT_ID(manager->list->length, firstLinkedList(manager->ids));
-        }
-
-        else if (status == BLOCK_PROCESS)
-        {
-            // Insere o processo atual na Lista de Bloqueados
-            insertLinkedList(manager->blocked, manager->cpu->pcb->pid, manager->cpu->pcb->priority);
-
-            // Troca de contexto para o processo selecionado
-            // pela função de escalonamento.
-            manager->executing = schedule(manager->ready);
-            changeContext(manager, manager->executing);
-        }
-
-        else if (status == TERMINATE_PROCESS)
-        {
-            // Adição na lista dos IDs que serão realocados
-            insertLinkedList(manager->ids, manager->executing, manager->executing);
-
-            // Desaloca a memória do processo finalizado
-            destroyPCB(manager->list->pcbs[manager->executing]);
-
-            manager->list->pcbs[manager->executing] = NULL;
-            (manager->list->length)--;
-
-            manager->nextID = NEXT_ID(manager->list->length, firstLinkedList(manager->ids));
-
-            manager->executing = schedule(manager->ready);
-
-            changeContext(manager, manager->executing);
-        }
-    }
-
-    report(manager);
-}
-
 int main()
 {
     Manager manager;
     char input;
     int status;
-    int id;
+    int auxiliarID;
 
     initializeManager(&manager);
     printf("Process Manager: Begin\n");
@@ -266,17 +251,16 @@ int main()
                     // Nenhum processo no sistema
                     if (firstLinkedList(manager.blocked) == -1)
                         printf("Não há nenhum processo no sistema!\n");
+                    // Há somente processos bloqueados
                     else
                         printf("Não há processos prontos no momento!\n");
 
-                    break;
+                    continue;
                 }
 
-                // Troca de contexto para o processo selecionado
-                // pela função de escalonamento.
-                manager.executing = schedule(manager.ready);
-                printf("Colocando processo na CPU: (PID = %d)\n", manager.executing);
-                changeContext(&manager, manager.executing);
+                // Troca de contexto para o processo selecionado pela função de escalonamento
+                auxiliarID = schedule(&manager);
+                changeContext(&manager, auxiliarID);
             }
 
             // Executa a próxima instrução do processo na CPU
@@ -290,6 +274,10 @@ int main()
 
             // Insere o ID da cópia instantânea na lista de processos prontos
             case FORK_PROCESS:
+                // Houve uma realocação de PIDs cujos processos já foram terminados
+                if (manager.nextID != manager.list->length)
+                    pollLinkedList(manager.ids);
+
                 insertLinkedList(manager.ready, manager.nextID, manager.list->pcbs[manager.nextID]->priority);
                 manager.nextID = NEXT_ID(manager.list->length, firstLinkedList(manager.ids));
                 clearIDList(manager.list, manager.ids);
@@ -298,26 +286,23 @@ int main()
             // Insere o processo atual na lista de processos bloqueados
             case BLOCK_PROCESS:
                 insertLinkedList(manager.blocked, manager.cpu->pcb->pid, 0);
-                manager.executing = schedule(manager.ready);
-                changeContext(&manager, manager.executing);
+                initializeCPU(manager.cpu);
                 break;
 
             // Insere o processo atual na lista de processos bloqueados
             case TERMINATE_PROCESS:
-
                 // Adição na lista dos IDs que serão realocados
                 insertLinkedList(manager.ids, manager.executing, manager.executing);
 
                 // Desaloca a memória do processo finalizado
                 destroyPCB(manager.list->pcbs[manager.executing]);
-
                 manager.list->pcbs[manager.executing] = NULL;
                 (manager.list->length)--;
 
+                initializeCPU(manager.cpu);
+
                 manager.nextID = NEXT_ID(manager.list->length, firstLinkedList(manager.ids));
 
-                manager.executing = schedule(manager.ready);
-                changeContext(&manager, manager.executing);
                 clearIDList(manager.list, manager.ids);
                 break;
 
@@ -330,25 +315,27 @@ int main()
                 break;
             }
 
+            auxiliarID = schedule(&manager);
+            changeContext(&manager, auxiliarID);
+
             break;
 
         case 'U':
             // Altera o estado do primeiro processo na fila de bloqueados para pronto
-            id = pollLinkedList(manager.blocked);
+            auxiliarID = pollLinkedList(manager.blocked);
 
-            if (id == -1)
+            if (auxiliarID == -1)
             {
                 printf("Não há processos bloqueados no momento!\n");
                 continue;
             }
 
-            insertLinkedList(manager.ready, id, manager.list->pcbs[id]->priority);
+            insertLinkedList(manager.ready, auxiliarID, manager.list->pcbs[auxiliarID]->priority);
 
             break;
 
         case 'P':
             // Bifurca esse processo e executa [reporter]
-            // TODO: Criar um processo novo para imprimir [reporter]
             report(&manager);
             wait(NULL);
             break;
@@ -369,6 +356,7 @@ int main()
         default:
             break;
         }
+
     } while (input != 'T');
 
     destroyManager(&manager);
