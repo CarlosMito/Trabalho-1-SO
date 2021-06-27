@@ -1,5 +1,8 @@
 #include "../include/linkedList.h"
 
+/**
+ * @brief Inicializa uma [LinkedList] vazia.
+ */
 void initializeLinkedList(LinkedList *list)
 {
     list->length = 0;
@@ -7,8 +10,69 @@ void initializeLinkedList(LinkedList *list)
     list->last = NULL;
 }
 
-// Retorna o [id] do primeiro item na lista ordenada crescentemente por [value].
-// Caso a lista esteja vazia, retorna -1.
+/**
+ * @brief Insere um novo [Node] (com ID correspondente à [id] e valor equivalente
+ * à [value]) em [list]. A posição que o mesmo ocupará na lista depende de [value].
+ * 
+ * @param list Ponteiro para a lista encadeada alvo.
+ */
+void insertLinkedList(LinkedList *list, int id, int value)
+{
+    Node *header, *lastHeader, *node;
+
+    node = (Node *)malloc(sizeof(Node));
+    node->value = value;
+    node->id = id;
+    node->next = NULL;
+
+    // Caso a lista esteja vazia
+    if (!list->length)
+    {
+        list->first = node;
+        list->last = node;
+        list->length = 1;
+        return;
+    }
+
+    header = list->first;
+    lastHeader = header;
+
+    while (header)
+    {
+        // [node] é inserido antes de [header]
+        if (header->value > node->value)
+        {
+            node->next = header;
+            list->length++;
+
+            // [node] é inserido no começo da lista
+            if (header == list->first)
+            {
+                list->first = node;
+                return;
+            }
+
+            // [node] é inserido entre 2 elementos
+            lastHeader->next = node;
+            return;
+        }
+
+        lastHeader = header;
+        header = header->next;
+    }
+
+    // [node] é inserido na última posição da lista
+    list->last->next = node;
+    list->last = node;
+    list->length++;
+}
+
+/**
+ * @brief Remove o primeiro item de [list].
+ * 
+ * @param list Ponteiro para a lista encadeada alvo.
+ * @return O [id] do item removido. Caso [list] esteja vazia, retorna -1.
+ */
 int pollLinkedList(LinkedList *list)
 {
     Node *auxiliar;
@@ -44,8 +108,37 @@ int pollLinkedList(LinkedList *list)
     return id;
 }
 
-// Apenas retorna o ID do primeiro item da lista, não remove nenhum elemento.
-// Caso a lista esteja vazia, retorna -1.
+/**
+ * @brief Esvazia [list] liberando a memória alocada por seus nós e resetando
+ * os atributos da mesma.
+ * 
+ * @param list Ponteiro para a lista encadeada alvo.
+ */
+void clearLinkedList(LinkedList *list)
+{
+    Node *auxiliar;
+
+    if (list->first)
+    {
+        auxiliar = list->first;
+        list->first = list->first->next;
+
+        clearLinkedList(list);
+
+        free(auxiliar);
+        return;
+    }
+
+    list->last = NULL;
+    list->length = 0;
+}
+
+/**
+ * @brief Verifica o [íd] do primeiro item de [list].
+ * 
+ * @param list Ponteiro para a lista encadeada alvo.
+ * @return O [id] do primeiro item de [list]. Caso [list] esteja vazia, retorna -1.
+ */
 int firstLinkedList(LinkedList *list)
 {
     // Caso a lista esteja vazia
@@ -55,58 +148,36 @@ int firstLinkedList(LinkedList *list)
     return list->first->id;
 }
 
-int insertLinkedList(LinkedList *list, int id, int value)
+/**
+ * @brief Cria uma array de inteiros contendo os [id]'s armazenados em uma [LinkedList].
+ * [array] deve ser tão extensa quanto [list] para armazenar todos os seus [id]'s.
+ * 
+ * @param list Ponteiro para a lista encadeada alvo.
+ * @param array Array que armazenará as [id]'s de [list].
+ * @return O próprio parâmtro [array] contendo todos os [id]'s de [list].
+ */
+int *linkedListToArray(LinkedList *list, int *array)
 {
-    Node *header, *lastHeader, *node;
+    Node *current;
+    int i;
 
-    node = (Node *)malloc(sizeof(Node));
-    node->value = value;
-    node->id = id;
-    node->next = NULL;
+    current = list->first;
+    i = 0;
 
-    // Caso a lista esteja vazia
-    if (!list->length)
+    while (current)
     {
-        list->first = node;
-        list->last = node;
-        list->length = 1;
-        return 0;
+        array[i++] = current->id;
+        current = current->next;
     }
 
-    header = list->first;
-    lastHeader = header;
-
-    while (header)
-    {
-        // [node] é inserido antes de [header]
-        if (header->value > node->value)
-        {
-            node->next = header;
-            list->length++;
-
-            // [node] é inserido no começo da lista
-            if (header == list->first)
-            {
-                list->first = node;
-                return 0;
-            }
-
-            // [node] é inserido entre 2 elementos
-            lastHeader->next = node;
-            return 0;
-        }
-
-        lastHeader = header;
-        header = header->next;
-    }
-
-    // [node] é inserido na última posição da lista
-    list->last->next = node;
-    list->last = node;
-    list->length++;
-    return 0;
+    return array;
 }
 
+/**
+ * @brief Imprime [list] formatada para um humano ler.
+ * 
+ * @param list Ponteiro para a lista encadeada que será impressa.
+ */
 void printLinkedList(LinkedList *list)
 {
     Node *header;
@@ -130,25 +201,11 @@ void printLinkedList(LinkedList *list)
            list->length, list->first->id, list->first->value, list->last->id, list->last->value);
 }
 
-void clearLinkedList(LinkedList *list)
-{
-    Node *auxiliar;
-
-    if (list->first)
-    {
-        auxiliar = list->first;
-        list->first = list->first->next;
-
-        clearLinkedList(list);
-
-        free(auxiliar);
-        return;
-    }
-
-    list->last = NULL;
-    list->length = 0;
-}
-
+/**
+ * @brief Destrói [list] liberando a memória de seus nós.
+ * 
+ * @param list Ponteiro para a lista encadeada alvo.
+ */
 void destroyLinkedList(LinkedList *list)
 {
     Node *auxiliar;
@@ -160,21 +217,4 @@ void destroyLinkedList(LinkedList *list)
         free(auxiliar);
         destroyLinkedList(list);
     }
-}
-
-int *linkedListToArray(LinkedList *list, int *array)
-{
-    Node *current;
-    int i;
-
-    current = list->first;
-    i = 0;
-
-    while (current)
-    {
-        array[i++] = current->id;
-        current = current->next;
-    }
-
-    return array;
 }

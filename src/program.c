@@ -33,22 +33,16 @@ void printInstruction(Instruction *instruction)
         printf("%d\n", instruction->integer);
 }
 
-/* =======================================================================================
+/* 
+ * =======================================================================================
  * PROGRAMA
  * =======================================================================================
  */
 
-Program initializeProgram(int totalInstructions)
-{
-    Program program;
-
-    program.size = totalInstructions;
-    program.instructions = (Instruction *)malloc(sizeof(Instruction) * totalInstructions);
-
-    return program;
-}
-
-Program emptyProgram()
+/**
+ * @brief Inicialize um [Program] vazio.
+ */
+Program initializeProgram()
 {
     Program program;
 
@@ -106,6 +100,37 @@ Instruction parseLine(char *line, int length)
     return instruction;
 }
 
+Instruction copyInstruction(Instruction *original)
+{
+    Instruction copy;
+
+    copy.command = original->command;
+    copy.integer = original->integer;
+    copy.string = NULL;
+
+    // Caso não seja nula
+    if (original->string)
+    {
+        copy.string = (char *)malloc(sizeof(char) * strlen(original->string));
+        strcpy(copy.string, original->string);
+    }
+
+    return copy;
+}
+
+Program copyProgram(Program *original)
+{
+    Program copy;
+
+    copy.size = original->size;
+    copy.instructions = (Instruction *)malloc(sizeof(Instruction) * copy.size);
+
+    for (int i = 0; i < original->size; i++)
+        copy.instructions[i] = copyInstruction(&(original->instructions[i]));
+
+    return copy;
+}
+
 Program parseFile(char *path)
 {
     FILE *file;
@@ -123,6 +148,7 @@ Program parseFile(char *path)
 
     if (file == NULL)
     {
+        printf("PATH: %s\n", path);
         perror("ERRO AO ABRIR O ARQUIVO");
         exit(EXIT_FAILURE);
     }
@@ -148,11 +174,8 @@ Program parseFile(char *path)
 
             if (total >= lastLimit)
             {
-                printf("Precisou realocar!\n");
                 lastLimit = DEFAULT_PROGRAM_SIZE + total;
-                instructions = (Instruction *)realloc(
-                    instructions,
-                    sizeof(Instruction) * lastLimit);
+                instructions = (Instruction *)realloc(instructions, sizeof(Instruction) * lastLimit);
             }
 
             continue;
@@ -171,7 +194,7 @@ Program parseFile(char *path)
         line[0] = '\0';
     }
 
-    program = emptyProgram();
+    program = initializeProgram();
     program.size = total;
     program.instructions = instructions;
 

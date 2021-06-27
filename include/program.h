@@ -13,29 +13,34 @@
 #define DEFAULT_PROGRAM_SIZE 256
 #define DEFAULT_PATH "programs/"
 
+/** 
+ * @brief Representa uma instrução de um programa.
+ */
 typedef struct
 {
-    char command; // Comando da instrução
-    int integer;  // Argumento em número inteiro
-    char *string; // Argumento em string
+    char command; /* Comando da instrução.        */
+    int integer;  /* Argumento em número inteiro. */
+    char *string; /* Argumento em string.         */
 } Instruction;
 
+/**
+ * @brief Conjunto de instruções que formam um programa.
+ */
 typedef struct
 {
-    int size;                  // Número de instruções
-    Instruction *instructions; // Array de instruções do programa
+    int size;                  /* Número total de instruções.      */
+    Instruction *instructions; /* Array de instruções do programa. */
 } Program;
 
-// Instruction createInstruction(char command, int number, char *filename);
-void printInstruction(Instruction *instruction);
-
-Program initializeProgram(int totalInstructions);
-Program emptyProgram();
-
-void destroyProgram(Program *program);
-void printProgram(Program *program);
-
-Program parseFile(char *path);
+Instruction initializeInstruction();
+Program initializeProgram();
 Instruction parseLine(char *line, int length);
+Program parseFile(char *path);
+void printInstruction(Instruction *instruction);
+void printProgram(Program *program);
+void destroyProgram(Program *program);
+
+Instruction copyInstruction(Instruction *original);
+Program copyProgram(Program *original);
 
 #endif

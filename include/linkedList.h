@@ -6,28 +6,34 @@
 
 typedef struct node Node;
 
-// TODO: Adicionar ID, dessa forma será possível ordenar por prioridade e manter o ID dos processos
+/**
+ * @brief Representa um item em uma lista encadeada de números inteiros.
+ */
 struct node
 {
-    int value;
-    int id;
-    Node *next;
+    int value;  /* Valor armazenado.                    */
+    int id;     /* Número identificador.                */
+    Node *next; /* Ponteiro para o próximo nó na lista. */
 };
 
+/**
+ * @brief Representa uma lista encadeada de números inteiros ordenada crescentemente
+ * com base no [value] de cada [Node].
+ */
 typedef struct
 {
-    int length;
-    Node *first;
-    Node *last;
+    int length;  /* Quantidade de nós na lista.           */
+    Node *first; /* Ponteiro para o primeiro nó da lista. */
+    Node *last;  /* Ponteiro para o último nó da lista.   */
 } LinkedList;
 
 void initializeLinkedList(LinkedList *list);
-void printLinkedList(LinkedList *list);
-int insertLinkedList(LinkedList *list, int id, int value);
-void destroyLinkedList(LinkedList *list);
+void insertLinkedList(LinkedList *list, int id, int value);
 int pollLinkedList(LinkedList *list);
+void clearLinkedList(LinkedList *list);
 int firstLinkedList(LinkedList *list);
 int *linkedListToArray(LinkedList *list, int *array);
-void clearLinkedList(LinkedList *list);
+void printLinkedList(LinkedList *list);
+void destroyLinkedList(LinkedList *list);
 
 #endif

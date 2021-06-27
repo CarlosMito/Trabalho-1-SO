@@ -45,14 +45,13 @@ int main(int argc, char *argv[])
         {
             sleep(1);
             printf("Insira um comando: ");
-            fflush(stderr);
             scanf("%c", &input);
             input = toupper(input);
             write(pipefd[1], &input, 1);
         } while (input != 'T');
 
         wait(NULL);
-        close(pipefd[1]);
+        close(pipefd[1]); /* Fecha o terminal de escrita */
     }
 
     printf("Commander: End\n");
@@ -119,4 +118,18 @@ int main(int argc, char *argv[])
  * 
  * Pelo o que está descrito nos requisitos, o escalonamento deve ocorrer após a execução de uma instrução do
  * processo na CPU.
+ * 
+ * 
+ * 
+ * O processo [init] não termina enquanto os processos filhos ainda não terminaram
+ * 
+ * No. If the parent is killed, children become children of the init process (that has the process id 1 and is launched as the first user process by the kernel).
+ * The init process checks periodically for new children, and waits for them (thus freeing resources that are allocated by their return value).
+ * 
+ * 
+ * Uma dificuldade foi deixar o armazenamento dos programas eficiente. No código atual cada processo possui uma
+ * uma cópia da estrutura de dados [Program]. Acho que o ideal seria deixar uma lista de programas já abertos
+ * armazenados na memória do Manager, e cada processo referenciar com um ponteiro seus respectivos programas.
+ * Dessa forma, poderia haver múltiplas instâncias de um mesmo programa utilizando uma quantidade considerável de
+ * memória a menos.
  */

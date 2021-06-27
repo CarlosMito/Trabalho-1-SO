@@ -27,12 +27,12 @@ typedef struct
 void printFromList(PCBList *table, LinkedList *list)
 {
     const int length = list->length;
-    int test[length];
+    int array[length];
 
-    linkedListToArray(list, test);
+    linkedListToArray(list, array);
 
     for (int i = 0; i < length; i++)
-        printPCB(table->pcbs[test[i]]);
+        printPCB(table->pcbs[array[i]]);
 }
 
 void debug(Manager *manager)
@@ -94,6 +94,21 @@ int schedule(Manager *manager)
     }
 
     return -1;
+}
+
+void linkedListTest()
+{
+    LinkedList test;
+    int i;
+
+    initializeLinkedList(&test);
+
+    for (i = 0; i < 100; i++)
+        insertLinkedList(&test, i, i);
+
+    printLinkedList(&test);
+
+    destroyLinkedList(&test);
 }
 
 void initializeManager(Manager *manager)
@@ -171,6 +186,7 @@ void report(Manager *manager)
     /* PROCESSO FILHO */
     if (cpid == 0)
     {
+        printf("Reporter: Begin\n");
         printRepeat('=', LINE_LENGTH, true);
         printTitle("ESTADO DO SISTEMA", false);
         printRepeat('=', LINE_LENGTH, true);
@@ -195,7 +211,23 @@ void report(Manager *manager)
         // printf("\n");
 
         printRepeat('=', LINE_LENGTH, true);
+        printf("Reporter: End\n");
         exit(EXIT_SUCCESS);
+    }
+}
+
+void adjustPPID(PCBList *pcbList, LinkedList *list, int terminated)
+{
+    Node *header;
+
+    header = list->first;
+
+    while (header)
+    {
+        if (pcbList->pcbs[header->id]->ppid == terminated)
+            pcbList->pcbs[header->id]->ppid = 0;
+
+        header = header->next;
     }
 }
 
@@ -218,19 +250,11 @@ void clearIDList(PCBList *list, LinkedList *ids)
         clearLinkedList(ids);
 }
 
-int main()
+void processCommands(Manager *manager)
 {
-    Manager manager;
     char input;
     int status;
     int auxiliarID;
-
-    initializeManager(&manager);
-    printf("Process Manager: Begin\n");
-
-    // ======================================================================================================
-    // PROCESSING COMMANDS
-    // ======================================================================================================
 
     do
     {
@@ -243,13 +267,13 @@ int main()
         {
         case 'Q':
             // CPU vazia
-            if (!manager.cpu->pcb)
+            if (!manager->cpu->pcb)
             {
                 // Nenhum processo pronto
-                if (firstLinkedList(manager.ready) == -1)
+                if (firstLinkedList(manager->ready) == -1)
                 {
                     // Nenhum processo no sistema
-                    if (firstLinkedList(manager.blocked) == -1)
+                    if (firstLinkedList(manager->blocked) == -1)
                         printf("Não há nenhum processo no sistema!\n");
                     // Há somente processos bloqueados
                     else
@@ -259,13 +283,14 @@ int main()
                 }
 
                 // Troca de contexto para o processo selecionado pela função de escalonamento
-                auxiliarID = schedule(&manager);
-                changeContext(&manager, auxiliarID);
+                auxiliarID = schedule(manager);
+                changeContext(manager, auxiliarID);
             }
 
             // Executa a próxima instrução do processo na CPU
-            status = executeCPU(manager.cpu, manager.list, manager.nextID, manager.time);
-            (manager.time)++;
+            status = executeCPU(manager->cpu, manager->list, manager->nextID, manager->time);
+
+            (manager->time)++;
 
             switch (status)
             {
@@ -275,35 +300,44 @@ int main()
             // Insere o ID da cópia instantânea na lista de processos prontos
             case FORK_PROCESS:
                 // Houve uma realocação de PIDs cujos processos já foram terminados
-                if (manager.nextID != manager.list->length)
-                    pollLinkedList(manager.ids);
+                if (manager->nextID != manager->list->length)
+                    pollLinkedList(manager->ids);
 
-                insertLinkedList(manager.ready, manager.nextID, manager.list->pcbs[manager.nextID]->priority);
-                manager.nextID = NEXT_ID(manager.list->length, firstLinkedList(manager.ids));
-                clearIDList(manager.list, manager.ids);
+                insertLinkedList(manager->ready, manager->nextID, manager->list->pcbs[manager->nextID]->priority);
+                manager->nextID = NEXT_ID(manager->list->length, firstLinkedList(manager->ids));
+                clearIDList(manager->list, manager->ids);
                 break;
 
             // Insere o processo atual na lista de processos bloqueados
             case BLOCK_PROCESS:
-                insertLinkedList(manager.blocked, manager.cpu->pcb->pid, 0);
-                initializeCPU(manager.cpu);
+                insertLinkedList(manager->blocked, manager->cpu->pcb->pid, 0);
+                initializeCPU(manager->cpu);
                 break;
 
             // Insere o processo atual na lista de processos bloqueados
             case TERMINATE_PROCESS:
-                // Adição na lista dos IDs que serão realocados
-                insertLinkedList(manager.ids, manager.executing, manager.executing);
+                // Caso o ID do processo finalizado seja diferente de 0,
+                if (manager->executing)
+                {
+                    // O PID é adicionado na lista dos IDs que serão realocados
+                    insertLinkedList(manager->ids, manager->executing, manager->executing);
 
-                // Desaloca a memória do processo finalizado
-                destroyPCB(manager.list->pcbs[manager.executing]);
-                manager.list->pcbs[manager.executing] = NULL;
-                (manager.list->length)--;
+                    // O [ppid] dos processos que eram filhos do processo que acabou de terminar
+                    // é alterado para o PID do processo [init], que é 0.
+                    adjustPPID(manager->list, manager->ready, manager->executing);
+                    adjustPPID(manager->list, manager->blocked, manager->executing);
 
-                initializeCPU(manager.cpu);
+                    // Desaloca a memória do processo finalizado
+                    destroyPCB(manager->list->pcbs[manager->executing]);
+                    manager->list->pcbs[manager->executing] = NULL;
+                    (manager->list->length)--;
+                }
 
-                manager.nextID = NEXT_ID(manager.list->length, firstLinkedList(manager.ids));
+                initializeCPU(manager->cpu);
 
-                clearIDList(manager.list, manager.ids);
+                manager->nextID = NEXT_ID(manager->list->length, firstLinkedList(manager->ids));
+
+                clearIDList(manager->list, manager->ids);
                 break;
 
             case UNKNOWN_COMMAND:
@@ -315,14 +349,16 @@ int main()
                 break;
             }
 
-            auxiliarID = schedule(&manager);
-            changeContext(&manager, auxiliarID);
+            auxiliarID = schedule(manager);
+            changeContext(manager, auxiliarID);
+
+            // debug(manager);
 
             break;
 
         case 'U':
             // Altera o estado do primeiro processo na fila de bloqueados para pronto
-            auxiliarID = pollLinkedList(manager.blocked);
+            auxiliarID = pollLinkedList(manager->blocked);
 
             if (auxiliarID == -1)
             {
@@ -330,34 +366,39 @@ int main()
                 continue;
             }
 
-            insertLinkedList(manager.ready, auxiliarID, manager.list->pcbs[auxiliarID]->priority);
+            insertLinkedList(manager->ready, auxiliarID, manager->list->pcbs[auxiliarID]->priority);
 
             break;
 
         case 'P':
             // Bifurca esse processo e executa [reporter]
-            report(&manager);
+            report(manager);
             wait(NULL);
             break;
 
         case 'T':
             // Bifurca, executa [reporter] e termina [manager] após [reporter] terminar
-            report(&manager);
+            report(manager);
             wait(NULL);
             input = 'T';
-            break;
-
-        case 'R':
-            destroyManager(&manager);
-            initializeManager(&manager);
-            printf("Sistema resetado!\n");
             break;
 
         default:
             break;
         }
-
     } while (input != 'T');
+}
+
+int main()
+{
+    Manager manager;
+
+    initializeManager(&manager);
+    printf("Process Manager: Begin\n");
+
+    processCommands(&manager);
+
+    // linkedListTest();
 
     destroyManager(&manager);
     printf("Process Manager: End\n");

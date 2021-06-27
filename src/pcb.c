@@ -40,7 +40,10 @@ PCB *initializePCBFromFile(char *path)
 void destroyPCB(PCB *pcb)
 {
     if (pcb)
+    {
+        destroyProgram(&(pcb->program));
         free(pcb);
+    }
 }
 
 /* 
@@ -59,8 +62,8 @@ void initializePCBList(PCBList *list)
 /**
  * @brief Insere um processo na tabela de processos na posição correspondente ao seu próprio ID.
  * 
- * @details Incrementa [length] na estrutura de [PCBList]. Caso não haja mais espaço no
- * array de [list], a memória é realocada dinamicamente para comportar mais
+ * @details Incrementa [length] na estrutura de [PCBList]. Caso não haja mais espaço
+ * no array de [list], a memória é realocada dinamicamente para comportar mais
  * [DEFAULT_LIST_LENGTH] itens.
  * 
  * @param list Tabela PCB de destino.
@@ -83,11 +86,6 @@ int insertPCB(PCBList *list, PCB *pcb)
     (list->length)++;
     return 0;
 }
-
-// PCB removePCB(PCBList *list, int index)
-// {
-//     list->pcbs[index].status = TERMINATED;
-// }
 
 PCB popPCB(PCBList *list)
 {

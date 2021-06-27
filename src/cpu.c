@@ -37,14 +37,19 @@ int executeCPU(CPU *cpu, PCBList *list, int nextID, int systemTime)
         break;
 
     case 'F':
-        forked = copyPCB(cpu->pcb);
+
+        forked = (PCB *)malloc(sizeof(PCB));
 
         forked->pid = nextID;
         forked->startTime = systemTime + 1;
         forked->ppid = cpu->pcb->pid;
         forked->cpuTime = 0;
-        forked->pc++;
-        forked->priority--;
+        forked->pc = cpu->pcb->pc + 1;
+        forked->priority = cpu->pcb->priority - 1;
+        forked->value = 0;
+
+        // printf("%s\n", cpu->pcb->program.instructions[0].string);
+        forked->program = copyProgram(&(cpu->pcb->program));
 
         cpu->pcb->pc += 1 + current.integer;
         cpu->pcb->priority = cpu->pcb->program.size - cpu->pcb->pc;
