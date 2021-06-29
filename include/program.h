@@ -13,6 +13,12 @@
 #define DEFAULT_PROGRAM_SIZE 256
 #define DEFAULT_PATH "programs/"
 
+/* 
+ * =======================================================================
+ * ESTRUTURAS DE DADOS
+ * =======================================================================
+ */
+
 /** 
  * @brief Representa uma instrução de um programa.
  */
@@ -32,15 +38,20 @@ typedef struct
     Instruction *instructions; /* Array de instruções do programa. */
 } Program;
 
+/* 
+ * =======================================================================
+ * FUNÇÕES
+ * =======================================================================
+ */
+
 Instruction initializeInstruction();
 Program initializeProgram();
 Instruction parseLine(char *line, int length);
 Program parseFile(char *path);
+Instruction copyInstruction(Instruction *original);
+Program copyProgram(Program *original);
 void printInstruction(Instruction *instruction);
 void printProgram(Program *program);
 void destroyProgram(Program *program);
-
-Instruction copyInstruction(Instruction *original);
-Program copyProgram(Program *original);
 
 #endif

@@ -1,11 +1,8 @@
 #include "../include/program.h"
 
-/* 
- * =======================================================================================
- * INSTRUÇÃO
- * =======================================================================================
+/**
+ * @brief Inicializa uma [Instruction] vazia.
  */
-
 Instruction initializeInstruction()
 {
     Instruction instruction;
@@ -17,30 +14,8 @@ Instruction initializeInstruction()
     return instruction;
 }
 
-void printInstruction(Instruction *instruction)
-{
-    if (instruction->command == '\0')
-    {
-        printf("Vazio\n");
-        return;
-    }
-
-    printf("%c ", instruction->command);
-
-    if (instruction->string != NULL)
-        printf("%s\n", instruction->string);
-    else
-        printf("%d\n", instruction->integer);
-}
-
-/* 
- * =======================================================================================
- * PROGRAMA
- * =======================================================================================
- */
-
 /**
- * @brief Inicialize um [Program] vazio.
+ * @brief Inicializa um [Program] vazio.
  */
 Program initializeProgram()
 {
@@ -52,25 +27,23 @@ Program initializeProgram()
     return program;
 }
 
-void destroyProgram(Program *program)
-{
-    for (int i = 0; i < program->size; i++)
-        free(program->instructions[i].string);
-
-    free(program->instructions);
-}
-
-void printProgram(Program *program)
-{
-    printf("Número de Instruções: %d\n", program->size);
-    printf("Instruções:\n");
-    for (int i = 0; i < program->size; i++)
-    {
-        printf("  %4d - ", i);
-        printInstruction(&(program->instructions[i]));
-    }
-}
-
+/**
+ * @brief Processa uma linha de comando de um programa, e armazena suas
+ * propriedades na estrutura de dados [Instruction].
+ * 
+ * @details As linhas de comandos dos programas simulados são escritas no
+ * seguinte formato:
+ * 
+ * <comando> <parâmetro do comando>
+ * 
+ * Sendo que <parâmetro do comando> pode ser uma [string] ou um [int]
+ * dependendo de <comando>.
+ * 
+ * @param line Linha de comando de um programa.
+ * @param length Quantidade de caracteres em [line].
+ * @return Uma [Instruction] contendo as informações retiradas da linha
+ * de comando.
+ */
 Instruction parseLine(char *line, int length)
 {
     Instruction instruction;
@@ -92,6 +65,7 @@ Instruction parseLine(char *line, int length)
         instruction.string = (char *)malloc(sizeof(char) * (length - 2));
         strcpy(instruction.string, argument);
     }
+
     else
     {
         instruction.integer = atoi(argument);
@@ -100,44 +74,27 @@ Instruction parseLine(char *line, int length)
     return instruction;
 }
 
-Instruction copyInstruction(Instruction *original)
-{
-    Instruction copy;
-
-    copy.command = original->command;
-    copy.integer = original->integer;
-    copy.string = NULL;
-
-    // Caso não seja nula
-    if (original->string)
-    {
-        copy.string = (char *)malloc(sizeof(char) * strlen(original->string));
-        strcpy(copy.string, original->string);
-    }
-
-    return copy;
-}
-
-Program copyProgram(Program *original)
-{
-    Program copy;
-
-    copy.size = original->size;
-    copy.instructions = (Instruction *)malloc(sizeof(Instruction) * copy.size);
-
-    for (int i = 0; i < original->size; i++)
-        copy.instructions[i] = copyInstruction(&(original->instructions[i]));
-
-    return copy;
-}
-
+/**
+ * @brief Processa um arquivo contendo um conjunto de linhas de comandos,
+ * e armazena suas informações na estrutura de dados [Program].
+ * 
+ * @details Caso não seja possível abrir o arquivo especificado, o
+ * programa termina com status [EXIT_FAILURE]. A quebra de linha determina
+ * o fim de cada instrução. A estrutura [Program] armazena as instruções
+ * em blocos de tamanho [DEFAULT_PROGRAM_SIZE].
+ * 
+ * @param path Caminho (relativo à pasta "programs") do arquivo com o
+ * programa escrito.
+ * 
+ * @return Um [Program] contendo as informações retiradas do arquivo
+ * referente ao [path].
+ */
 Program parseFile(char *path)
 {
     FILE *file;
     Program program;
     Instruction *instructions;
 
-    int allocated;
     int lastLimit;
     int total;
     char character;
@@ -175,11 +132,14 @@ Program parseFile(char *path)
             if (total >= lastLimit)
             {
                 lastLimit = DEFAULT_PROGRAM_SIZE + total;
-                instructions = (Instruction *)realloc(instructions, sizeof(Instruction) * lastLimit);
+                instructions = (Instruction *)realloc(
+                    instructions,
+                    sizeof(Instruction) * lastLimit);
             }
 
             continue;
         }
+
         line[i] = character;
 
         if (i < MAX_INSTRUCTION_LENGTH - 1)
@@ -199,4 +159,85 @@ Program parseFile(char *path)
     program.instructions = instructions;
 
     return program;
+}
+
+/**
+ * @brief Retorna uma [Instruction] que é cópia de [original].
+ */
+Instruction copyInstruction(Instruction *original)
+{
+    Instruction copy;
+
+    copy.command = original->command;
+    copy.integer = original->integer;
+    copy.string = NULL;
+
+    // Caso não seja nula
+    if (original->string)
+    {
+        copy.string = (char *)malloc(sizeof(char) * strlen(original->string));
+        strcpy(copy.string, original->string);
+    }
+
+    return copy;
+}
+
+/**
+ * @brief Retorna um [Program] que é cópia de [original].
+ */
+Program copyProgram(Program *original)
+{
+    Program copy;
+
+    copy.size = original->size;
+    copy.instructions = (Instruction *)malloc(sizeof(Instruction) * copy.size);
+
+    for (int i = 0; i < original->size; i++)
+        copy.instructions[i] = copyInstruction(&(original->instructions[i]));
+
+    return copy;
+}
+
+/**
+ * @brief Imprime [instruction] formatada para um humano ler.
+ */
+void printInstruction(Instruction *instruction)
+{
+    if (instruction->command == '\0')
+    {
+        printf("Vazio\n");
+        return;
+    }
+
+    printf("%c ", instruction->command);
+
+    if (instruction->string != NULL)
+        printf("%s\n", instruction->string);
+    else
+        printf("%d\n", instruction->integer);
+}
+
+/**
+ * @brief Imprime [program] formatado para um humano ler.
+ */
+void printProgram(Program *program)
+{
+    printf("Número de Instruções: %d\n", program->size);
+    printf("Instruções:\n");
+    for (int i = 0; i < program->size; i++)
+    {
+        printf("  %4d - ", i);
+        printInstruction(&(program->instructions[i]));
+    }
+}
+
+/**
+ * @brief Destrói [program] liberando a memória alocada para as instruções.
+ */
+void destroyProgram(Program *program)
+{
+    for (int i = 0; i < program->size; i++)
+        free(program->instructions[i].string);
+
+    free(program->instructions);
 }

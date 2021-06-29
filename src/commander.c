@@ -78,29 +78,6 @@ int main(int argc, char *argv[])
  * 
  * 
  * 
- * 
- * Com os programas atuais em [program] o programa deve se comportar da seguinte maneira:
- * 
- * TIME | (PID: INSTRUCTION)
-
- *  1 | (0: 0) - 1000
- *  2 | (0: 1) - 1019
- *  3 | (0: 2) - 1039
- *  4 | (0: 3) - 1016
- *  5 | (0: 4) - 1071
- *  6 | (0: 5) - Criou PID 1
- *  7 | (0: 6) - Bloqueou
- *  8 | (1: 0) - Trocou para p1
- *  9 | (1: 1) - 64
- * 10 | (1: 2) - 164
- * 11 | (1: 3) - 132
- * 12 | (1: 4) - Criou PID 2
- * 13 | (1: 5) - Bloqueou
- * 14 | (2: 0) - Trocou para p4
- * 15 | (2: 1) - 100
- * 16 | (2: 2) - 120
- * 17 | (2: 3) - 40
- * 18 | (2: 4) - Bloqueou
  *
  * ESCALONAMENTO
  *  
@@ -121,15 +98,19 @@ int main(int argc, char *argv[])
  * 
  * 
  * 
- * O processo [init] não termina enquanto os processos filhos ainda não terminaram
+ * O processo [init] não termina enquanto os processos filhos ainda não terminaram.
  * 
  * No. If the parent is killed, children become children of the init process (that has the process id 1 and is launched as the first user process by the kernel).
  * The init process checks periodically for new children, and waits for them (thus freeing resources that are allocated by their return value).
  * 
  * 
  * Uma dificuldade foi deixar o armazenamento dos programas eficiente. No código atual cada processo possui uma
- * uma cópia da estrutura de dados [Program]. Acho que o ideal seria deixar uma lista de programas já abertos
- * armazenados na memória do Manager, e cada processo referenciar com um ponteiro seus respectivos programas.
- * Dessa forma, poderia haver múltiplas instâncias de um mesmo programa utilizando uma quantidade considerável de
- * memória a menos.
+ * uma cópia da estrutura de dados [Program]. Creio que o ideal seria deixar uma lista de programas já abertos
+ * armazenados na memória do [Manager], e cada processo referenciar com um ponteiro seus respectivos programas.
+ * Dessa forma, poderia haver múltiplas instâncias de um mesmo programa utilizando uma quantidade mínima de
+ * memória.
+ * 
+ * Outro problema foi sincronizar a execução dos processos Commander, Process Manager e Reporter. Como o computador
+ * possui sua própria medida de escalonamento, por vezes é difícil controlar o fluxo de execução de maneira que
+ * as instruções sejam executadas na ordem desejada.
  */

@@ -1,30 +1,15 @@
 #include "../include/pcb.h"
 
-void printPCB(PCB *pcb)
-{
-    if (pcb)
-        printf("PID: %4d | PPID: %4d | Prioridade: %4d | Valor: %4d | Início: %4d | Tempo CPU: %4d | PC: %4d\n",
-               pcb->pid, pcb->ppid, pcb->priority, pcb->value, pcb->startTime, pcb->cpuTime, pcb->pc);
-}
+/* 
+ * =======================================================================
+ * PCB: PROCESS CONTROL BLOCK
+ * =======================================================================
+ */
 
-PCB *copyPCB(PCB *pcb)
-{
-    PCB *copy;
-
-    copy = (PCB *)malloc(sizeof(PCB));
-
-    copy->pid = pcb->pid;
-    copy->ppid = pcb->ppid;
-    copy->pc = pcb->pc;
-    copy->value = pcb->value;
-    copy->priority = pcb->priority;
-    copy->startTime = pcb->startTime;
-    copy->cpuTime = pcb->cpuTime;
-    copy->program = pcb->program;
-
-    return copy;
-}
-
+/**
+ * @brief Inicializa um [PCB] a partir das informações do arquivo
+ * correpondente ao [path].
+ */
 PCB *initializePCBFromFile(char *path)
 {
     PCB *pcb;
@@ -37,6 +22,19 @@ PCB *initializePCBFromFile(char *path)
     return pcb;
 }
 
+/**
+ * @brief Imprime [pcb] formatado para um humano ler.
+ */
+void printPCB(PCB *pcb)
+{
+    if (pcb)
+        printf("PID: %4d | PPID: %4d | Prioridade: %4d | Valor: %4d | Início: %4d | Tempo CPU: %4d | PC: %4d\n",
+               pcb->pid, pcb->ppid, pcb->priority, pcb->value, pcb->startTime, pcb->cpuTime, pcb->pc);
+}
+
+/**
+ * @brief Destrói [pcb] liberando a memória alocada.
+ */
 void destroyPCB(PCB *pcb)
 {
     if (pcb)
@@ -47,11 +45,14 @@ void destroyPCB(PCB *pcb)
 }
 
 /* 
- * =======================================================================================
+ * =======================================================================
  * PCBList: PCB List or PCB Table
- * =======================================================================================
+ * =======================================================================
  */
 
+/**
+ * @brief Inicializa uma [PCBList] vazia.
+ */
 void initializePCBList(PCBList *list)
 {
     list->length = 0;
@@ -60,14 +61,18 @@ void initializePCBList(PCBList *list)
 }
 
 /**
- * @brief Insere um processo na tabela de processos na posição correspondente ao seu próprio ID.
+ * @brief Insere um processo na tabela de processos na posição
+ * correspondente ao seu próprio ID.
  * 
- * @details Incrementa [length] na estrutura de [PCBList]. Caso não haja mais espaço
- * no array de [list], a memória é realocada dinamicamente para comportar mais
- * [DEFAULT_LIST_LENGTH] itens.
+ * @details Incrementa [length] na estrutura de [PCBList]. Caso não haja
+ * mais espaço no array de [list], a memória é realocada dinamicamente
+ * para comportar mais [DEFAULT_LIST_LENGTH] itens.
  * 
  * @param list Tabela PCB de destino.
  * @param pcb Processo adicionado.
+ * 
+ * @return Caso a operação seja bem sucedida, retorna 0, caso contrário,
+ * retorna -1.
  */
 int insertPCB(PCBList *list, PCB *pcb)
 {
@@ -87,16 +92,18 @@ int insertPCB(PCBList *list, PCB *pcb)
     return 0;
 }
 
-PCB popPCB(PCBList *list)
-{
-}
-
+/**
+ * @brief Imprime [list] formatado para um humano ler.
+ */
 void printPCBList(PCBList *list)
 {
     for (int i = 0; i < list->expanded * DEFAULT_LIST_LENGTH; i++)
         printPCB(list->pcbs[i]);
 }
 
+/**
+ * @brief Destrói [list] liberando a memória alocada.
+ */
 void destroyPCBList(PCBList *list)
 {
     // Itera sobre todos os índices da lista

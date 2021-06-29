@@ -1,5 +1,8 @@
 #include "../include/cpu.h"
 
+/**
+ * @brief Inicializa uma [CPU] vazia.
+ */
 void initializeCPU(CPU *cpu)
 {
     cpu->lastTime = 0;
@@ -7,6 +10,29 @@ void initializeCPU(CPU *cpu)
     cpu->pcb = NULL;
 }
 
+/**
+ * @brief Executa a próxima instrução do processo que está na CPU.
+ * 
+ * @details Sinais de retorno:
+ * 
+ *     [INSTRUCTION_EXECUTED]: Comando executado normalmente, nenhuma
+ *     medida adicional é necessária.
+ * 
+ *     [INSTRUCTION_OUT_OF_RANGE]: Não há instruções restantes para
+ *     executar.
+ * 
+ *     [FORK_PROCESS]: Processo bifurcado.
+ *     [CHANGE_PROCESS]: Troca de imagem para outro processo.
+ *     [BLOCK_PROCESS]: Processo bloqueado.
+ *     [UNKNOWN_PROCESS]: Comando da instrução não reconhecido.
+ * 
+ * @param cpu Ponteiro para a CPU.
+ * @param list Lista com os PCB's não finalizados.
+ * @param nextID Número para o próximo ID válido.
+ * @param systemTime Tempo atual do sistema.
+ * @return Dependendo do comando que foi processado e de seu resultado,
+ * diferentes sinais de status são retornados.
+ */
 int executeCPU(CPU *cpu, PCBList *list, int nextID, int systemTime)
 {
     PCB *forked;
@@ -37,7 +63,7 @@ int executeCPU(CPU *cpu, PCBList *list, int nextID, int systemTime)
         break;
 
     case 'F':
-
+        // Bifurca o processo
         forked = (PCB *)malloc(sizeof(PCB));
 
         forked->pid = nextID;
@@ -48,7 +74,6 @@ int executeCPU(CPU *cpu, PCBList *list, int nextID, int systemTime)
         forked->priority = cpu->pcb->priority - 1;
         forked->value = 0;
 
-        // printf("%s\n", cpu->pcb->program.instructions[0].string);
         forked->program = copyProgram(&(cpu->pcb->program));
 
         cpu->pcb->pc += 1 + current.integer;
@@ -60,8 +85,12 @@ int executeCPU(CPU *cpu, PCBList *list, int nextID, int systemTime)
         return FORK_PROCESS;
 
     case 'R':
+        // Troca de imagem
         strcpy(path, DEFAULT_PATH);
         strcat(path, current.string);
+
+        // Destrói o programa anterior
+        destroyProgram(&(cpu->pcb->program));
 
         cpu->pcb->program = parseFile(path);
         cpu->pcb->pc = 0;
@@ -74,7 +103,6 @@ int executeCPU(CPU *cpu, PCBList *list, int nextID, int systemTime)
         return TERMINATE_PROCESS;
 
     case 'B':
-        // Bloqueia esse processo
         cpu->pcb->pc++;
         cpu->pcb->priority = cpu->pcb->program.size - cpu->pcb->pc;
         return BLOCK_PROCESS;
@@ -87,9 +115,12 @@ int executeCPU(CPU *cpu, PCBList *list, int nextID, int systemTime)
     cpu->pcb->pc++;
     cpu->pcb->priority = cpu->pcb->program.size - cpu->pcb->pc;
 
-    return EXIT_SUCCESS;
+    return INSTRUCTION_EXECUTED;
 }
 
+/**
+ * @brief Imprime [cpu] formatado para um humano ler.
+ */
 void printCPU(CPU *cpu)
 {
     if (!cpu->pcb)

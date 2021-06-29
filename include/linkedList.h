@@ -4,6 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* 
+ * =======================================================================
+ * ESTRUTURAS DE DADOS
+ * =======================================================================
+ */
+
 typedef struct node Node;
 
 /**
@@ -17,8 +23,8 @@ struct node
 };
 
 /**
- * @brief Representa uma lista encadeada de números inteiros ordenada crescentemente
- * com base no [value] de cada [Node].
+ * @brief Representa uma lista encadeada de números inteiros ordenada
+ * crescentemente com base no [value] de cada [Node].
  */
 typedef struct
 {
@@ -26,6 +32,12 @@ typedef struct
     Node *first; /* Ponteiro para o primeiro nó da lista. */
     Node *last;  /* Ponteiro para o último nó da lista.   */
 } LinkedList;
+
+/* 
+ * =======================================================================
+ * FUNÇÕES
+ * =======================================================================
+ */
 
 void initializeLinkedList(LinkedList *list);
 void insertLinkedList(LinkedList *list, int id, int value);

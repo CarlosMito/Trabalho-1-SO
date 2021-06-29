@@ -11,8 +11,9 @@ void initializeLinkedList(LinkedList *list)
 }
 
 /**
- * @brief Insere um novo [Node] (com ID correspondente à [id] e valor equivalente
- * à [value]) em [list]. A posição que o mesmo ocupará na lista depende de [value].
+ * @brief Insere um novo [Node] (com ID correspondente à [id] e valor
+ * equivalente à [value]) em [list]. A posição que o mesmo ocupará na
+ * lista depende de [value].
  * 
  * @param list Ponteiro para a lista encadeada alvo.
  */
@@ -109,8 +110,8 @@ int pollLinkedList(LinkedList *list)
 }
 
 /**
- * @brief Esvazia [list] liberando a memória alocada por seus nós e resetando
- * os atributos da mesma.
+ * @brief Esvazia [list] liberando a memória alocada por seus nós e
+ * resetando os atributos da mesma.
  * 
  * @param list Ponteiro para a lista encadeada alvo.
  */
@@ -137,7 +138,8 @@ void clearLinkedList(LinkedList *list)
  * @brief Verifica o [íd] do primeiro item de [list].
  * 
  * @param list Ponteiro para a lista encadeada alvo.
- * @return O [id] do primeiro item de [list]. Caso [list] esteja vazia, retorna -1.
+ * @return O [id] do primeiro item de [list]. Caso [list] esteja vazia,
+ * retorna -1.
  */
 int firstLinkedList(LinkedList *list)
 {
@@ -149,8 +151,9 @@ int firstLinkedList(LinkedList *list)
 }
 
 /**
- * @brief Cria uma array de inteiros contendo os [id]'s armazenados em uma [LinkedList].
- * [array] deve ser tão extensa quanto [list] para armazenar todos os seus [id]'s.
+ * @brief Cria uma array de inteiros contendo os [id]'s armazenados em
+ * uma [LinkedList]. [array] deve ser tão extensa quanto [list] para
+ * armazenar todos os seus [id]'s.
  * 
  * @param list Ponteiro para a lista encadeada alvo.
  * @param array Array que armazenará as [id]'s de [list].
@@ -175,8 +178,6 @@ int *linkedListToArray(LinkedList *list, int *array)
 
 /**
  * @brief Imprime [list] formatada para um humano ler.
- * 
- * @param list Ponteiro para a lista encadeada que será impressa.
  */
 void printLinkedList(LinkedList *list)
 {
@@ -198,13 +199,13 @@ void printLinkedList(LinkedList *list)
     }
 
     printf("\nLength: %d | First: (%d: %d) and Last: (%d: %d)\n",
-           list->length, list->first->id, list->first->value, list->last->id, list->last->value);
+           list->length,
+           list->first->id, list->first->value,
+           list->last->id, list->last->value);
 }
 
 /**
  * @brief Destrói [list] liberando a memória de seus nós.
- * 
- * @param list Ponteiro para a lista encadeada alvo.
  */
 void destroyLinkedList(LinkedList *list)
 {
