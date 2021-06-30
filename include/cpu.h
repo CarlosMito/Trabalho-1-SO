@@ -4,12 +4,11 @@
 #include "pcb.h"
 
 #define INSTRUCTION_EXECUTED 0
-#define INSTRUCTION_OUT_OF_RANGE 1
-#define FORK_PROCESS 2
-#define CHANGE_PROCESS 3
-#define TERMINATE_PROCESS 4
-#define BLOCK_PROCESS 5
-#define UNKNOWN_COMMAND 6
+#define FORK_PROCESS 1
+#define CHANGE_PROCESS 2
+#define TERMINATE_PROCESS 3
+#define BLOCK_PROCESS 4
+#define UNKNOWN_COMMAND 5
 
 /**
  * @brief Representa a CPU do simulador. É responsável por executar de

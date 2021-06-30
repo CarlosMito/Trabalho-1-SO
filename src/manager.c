@@ -17,33 +17,46 @@ int main()
     return 0;
 }
 
-void printFromList(PCBList *table, LinkedList *list)
+/**
+ * @brief Inicializa o Manager do simulador.
+ * 
+ * @details Inicializa todas as estruturas de dados necessárias, configura
+ * o tempo do sistema para 0, modifica o próximo ID para 1, inicia o
+ * processo [init], e o coloca na CPU
+ */
+void initializeManager(Manager *manager)
 {
-    const int length = list->length;
-    int array[length];
+    PCB *init;
 
-    linkedListToArray(list, array);
+    manager->cpu = (CPU *)malloc(sizeof(CPU));
+    manager->list = (PCBList *)malloc(sizeof(PCBList));
+    manager->ready = (LinkedList *)malloc(sizeof(LinkedList));
+    manager->blocked = (LinkedList *)malloc(sizeof(LinkedList));
+    manager->ids = (LinkedList *)malloc(sizeof(LinkedList));
 
-    for (int i = 0; i < length; i++)
-        printPCB(table->pcbs[array[i]]);
+    manager->time = 0;
+
+    initializeCPU(manager->cpu);
+    initializePCBList(manager->list);
+    initializeLinkedList(manager->ready);
+    initializeLinkedList(manager->blocked);
+    initializeLinkedList(manager->ids);
+
+    manager->nextID = 1;
+
+    init = initializePCBFromFile("programs/init");
+
+    insertPCB(manager->list, init);
+    changeContext(manager, 0);
 }
 
-void debug(Manager *manager)
-{
-    printf("READY: ");
-    printLinkedList(manager->ready);
-    printf("BLOCKED: ");
-    printLinkedList(manager->blocked);
-    printf("IDS: ");
-    printLinkedList(manager->ids);
-
-    printf("NEXT ID: %d", manager->nextID);
-
-    printf("\n");
-}
-
-// @brief tTes
-// @param pid: PID do processo que irá assumir a CPU
+/**
+ * @brief Troca de Contexto do simulador. Retira um processo da CPU e
+ * coloca outro no lugar.
+ * 
+ * @param manager Ponteiro para o Manager do simulador.
+ * @param pid PID do processo que irá assumir a CPU.
+ */
 void changeContext(Manager *manager, int pid)
 {
     PCB *target;
@@ -61,7 +74,18 @@ void changeContext(Manager *manager, int pid)
     manager->cpu->pcb = target;
 }
 
-// Função de Escalonamento: Retorna o ID do processo que será executado pela CPU.
+/**
+ * @brief Função de Escalonamento. Retorna o ID do processo que será
+ * executado pela CPU.
+ * 
+ * @details A ordem de escalonamento é inversamente proporcional à
+ * [priority], ou seja, quanto menor o valor de [priority] maior serão
+ * as chances do processo assumir a CPU, e vice-versa.
+ * 
+ * @param manager 
+ * @return ID do processo que assumirá a CPU. Caso não haja processos
+ * prontos, retorna -1. 
+ */
 int schedule(Manager *manager)
 {
     int idSRT, cpuPriority, readyPriority;
@@ -89,126 +113,20 @@ int schedule(Manager *manager)
     return -1;
 }
 
-void linkedListTest()
-{
-    LinkedList test;
-    int i;
-
-    initializeLinkedList(&test);
-
-    for (i = 0; i < 100; i++)
-        insertLinkedList(&test, i, i);
-
-    printLinkedList(&test);
-
-    destroyLinkedList(&test);
-}
-
-void initializeManager(Manager *manager)
-{
-    PCB *init;
-
-    manager->cpu = (CPU *)malloc(sizeof(CPU));
-    manager->list = (PCBList *)malloc(sizeof(PCBList));
-    manager->ready = (LinkedList *)malloc(sizeof(LinkedList));
-    manager->blocked = (LinkedList *)malloc(sizeof(LinkedList));
-    manager->ids = (LinkedList *)malloc(sizeof(LinkedList));
-
-    manager->time = 0;
-
-    initializeCPU(manager->cpu);
-    initializePCBList(manager->list);
-    initializeLinkedList(manager->ready);
-    initializeLinkedList(manager->blocked);
-    initializeLinkedList(manager->ids);
-
-    manager->nextID = 1;
-
-    init = initializePCBFromFile("programs/init");
-
-    insertPCB(manager->list, init);
-    changeContext(manager, 0);
-}
-
-void destroyManager(Manager *manager)
-{
-    destroyPCBList(manager->list);
-    destroyLinkedList(manager->ready);
-    destroyLinkedList(manager->blocked);
-    destroyLinkedList(manager->ids);
-
-    free(manager->cpu);
-    free(manager->list);
-    free(manager->ready);
-    free(manager->blocked);
-    free(manager->ids);
-}
-
-void printRepeat(char character, int times, bool breakline)
-{
-    int i;
-
-    for (i = 0; i < times; i++)
-        printf("%c", character);
-
-    if (breakline)
-        printf("\n");
-}
-
-void printTitle(char *title, bool vspace)
-{
-    if (vspace)
-        printf("\n");
-
-    // O +1 serve para "arredondar para cima"
-    int freeSpace = LINE_LENGTH - strlen(title) + 1;
-    printRepeat(' ', freeSpace / 2, false);
-    printf("%s\n", title);
-}
-
-void report(Manager *manager)
-{
-    pid_t cpid;
-
-    if ((cpid = fork()) == -1)
-    {
-        perror("ERRO NO FORK");
-        exit(EXIT_FAILURE);
-    }
-
-    /* PROCESSO FILHO */
-    if (cpid == 0)
-    {
-        printf("Reporter: Begin\n");
-        printRepeat('=', LINE_LENGTH, true);
-        printTitle("ESTADO DO SISTEMA", false);
-        printRepeat('=', LINE_LENGTH, true);
-
-        printf("\nTEMPO ATUAL: %d\n", manager->time);
-
-        printTitle("PROCESSO EXECUTANDO", true);
-        printPCB(manager->cpu->pcb);
-        printf("\n");
-
-        printTitle("PROCESSOS PRONTOS", true);
-        printFromList(manager->list, manager->ready);
-        printf("\n");
-
-        printTitle("PROCESSOS BLOQUEADOS", true);
-        printFromList(manager->list, manager->blocked);
-        printf("\n");
-
-        // Apenas para debugar
-        // printTitle("TODOS OS PROCESSOS", true);
-        // printPCBList(manager->list);
-        // printf("\n");
-
-        printRepeat('=', LINE_LENGTH, true);
-        printf("Reporter: End\n");
-        exit(EXIT_SUCCESS);
-    }
-}
-
+/**
+ * @brief Realiza um ajuste nos PPID's dos processos não finalizados, após
+ * o término de um processo.
+ * 
+ * @details Como há realocação de PID's, para que não haja casos no qual
+ * um processo acabe sendo filho e pai, simultaneamente, de um outro 
+ * processo, é preciso ajustar os PPID's quando um processo termina.
+ * Assim como ocorre em alguns Sistemas Operacionais, o processo [init]
+ * se torna o pai dos processos órfãos.
+ * 
+ * @param pcbList Lista com os PCB's não finalizados.
+ * @param list Lista encadeada com os PID's dos processos a serem ajustados.
+ * @param terminated PID do processo que terminou.
+ */
 void adjustPPID(PCBList *pcbList, LinkedList *list, int terminated)
 {
     Node *header;
@@ -224,25 +142,42 @@ void adjustPPID(PCBList *pcbList, LinkedList *list, int terminated)
     }
 }
 
-int arithmeticSeries(int n, int start, int end)
-{
-    return n * (start + end) / 2;
-}
-
+/**
+ * @brief Limpa a lista de ID's que serão realocados, caso seja necessário.
+ * 
+ * @details Verifica processo a processo, ao encontrar um espaço vazio,
+ * confere se todos os elemento preenchidos de [list] foram analisados,
+ * em caso afirmativo, limpa [ids], caso contrário, há lacunas de PID's
+ * na Tabela PCB e, portanto, nada é feito.
+ * 
+ * @param list Lista com os PCB's não finalizados.
+ * @param ids Lista com os ID's a serem realocados.
+ */
 void clearIDList(PCBList *list, LinkedList *ids)
 {
-    int total, i;
-
-    total = 0;
+    int i;
 
     for (i = 0; i < list->expanded * DEFAULT_LIST_LENGTH; i++)
-        if (list->pcbs[i])
-            total += list->pcbs[i]->pid;
+        if (!list->pcbs[i])
+            break;
 
-    if (total == arithmeticSeries(list->length, 0, list->length - 1))
+    if (i == list->length)
         clearLinkedList(ids);
 }
 
+/**
+ * @brief Processa os comandos recebidos do Commander.
+ * 
+ * @details Não há diferenciação entre caracteres maiúsculos e minúsculos.
+ * Consiste em um loop que não se encerra enquanto o comando lido for
+ * diferente de T. O comando Q aciona a execução da CPU e dependendo de
+ * seu status de retorno, são realizadas medidas adicionais de ajuste no
+ * [manager]. O comando U desbloqueia o primeiro processo bloqueado.
+ * O comando P cria o processo Reporter que imprime o estado atual de
+ * [manager].
+ * 
+ * @param manager Ponteiro para o Manager do simulador.
+ */
 void processCommands(Manager *manager)
 {
     char input;
@@ -336,16 +271,10 @@ void processCommands(Manager *manager)
             case UNKNOWN_COMMAND:
                 printf("Comando não reconhecido!\n");
                 break;
-
-            case INSTRUCTION_OUT_OF_RANGE:
-                printf("Instrução fora de alcance!\n");
-                break;
             }
 
             auxiliarID = schedule(manager);
             changeContext(manager, auxiliarID);
-
-            // debug(manager);
 
             break;
 
@@ -380,4 +309,146 @@ void processCommands(Manager *manager)
             break;
         }
     } while (input != 'T');
+}
+
+/**
+ * @brief Imprime [character] repetidamente, [times] vezes.
+ * 
+ * @param character Caractere que será impresso.
+ * @param times Quantidade de caracteres impressos.
+ * @param breakline Quebra de linha após a repetição.
+ */
+void printRepeat(char character, int times, bool breakline)
+{
+    int i;
+
+    for (i = 0; i < times; i++)
+        printf("%c", character);
+
+    if (breakline)
+        printf("\n");
+}
+
+/**
+ * @brief Imprime [title] centralizado em uma linha de tamanho [LINE_LENGTH].
+ * 
+ * @param title Texto que será impresso.
+ * @param vspace Decide se coloca ou não uma quebra de linha antes do título.
+ */
+void printTitle(char *title, bool vspace)
+{
+    if (vspace)
+        printf("\n");
+
+    // O +1 serve para "arredondar para cima"
+    int freeSpace = LINE_LENGTH - strlen(title) + 1;
+    printRepeat(' ', freeSpace / 2, false);
+    printf("%s\n", title);
+}
+
+/**
+ * @brief Imprime os processos de [table] cujos ID's estão em [list].
+ * 
+ * @param table Lista com os PCB's não finalizados.
+ * @param list Lista encadeada com os ID's a serem impressos.
+ */
+void printFromList(PCBList *table, LinkedList *list)
+{
+    const int length = list->length;
+    int array[length];
+
+    linkedListToArray(list, array);
+
+    for (int i = 0; i < length; i++)
+        printPCB(table->pcbs[array[i]]);
+}
+
+/**
+ * @brief Cria um novo processo para imprimir o estado atual de [manager],
+ * em seguida, o mesmo é finalizado.
+ * 
+ * @param manager Estrutura que será impressa.
+ */
+void report(Manager *manager)
+{
+    pid_t cpid;
+
+    if ((cpid = fork()) == -1)
+    {
+        perror("ERRO NO FORK");
+        exit(EXIT_FAILURE);
+    }
+
+    /* PROCESSO FILHO */
+    if (cpid == 0)
+    {
+        printf("Reporter: Begin\n");
+        printRepeat('=', LINE_LENGTH, true);
+        printTitle("ESTADO DO SISTEMA", false);
+        printRepeat('=', LINE_LENGTH, true);
+
+        printf("\nTEMPO ATUAL: %d\n", manager->time);
+
+        printTitle("PROCESSO EXECUTANDO", true);
+        printPCB(manager->cpu->pcb);
+        printf("\n");
+
+        printTitle("PROCESSOS PRONTOS", true);
+        printFromList(manager->list, manager->ready);
+        printf("\n");
+
+        printTitle("PROCESSOS BLOQUEADOS", true);
+        printFromList(manager->list, manager->blocked);
+        printf("\n");
+
+        printRepeat('=', LINE_LENGTH, true);
+        printf("Reporter: End\n");
+        exit(EXIT_SUCCESS);
+    }
+}
+
+/**
+ * @brief Destrói [manager] liberando a memória alocada.
+ */
+void destroyManager(Manager *manager)
+{
+    destroyPCBList(manager->list);
+    destroyLinkedList(manager->ready);
+    destroyLinkedList(manager->blocked);
+    destroyLinkedList(manager->ids);
+
+    free(manager->cpu);
+    free(manager->list);
+    free(manager->ready);
+    free(manager->blocked);
+    free(manager->ids);
+}
+
+void debug(Manager *manager)
+{
+    printf("READY: ");
+    printLinkedList(manager->ready);
+    printf("BLOCKED: ");
+    printLinkedList(manager->blocked);
+    printf("IDS: ");
+    printLinkedList(manager->ids);
+
+    printf("NEXT ID: %d", manager->nextID);
+
+    printf("\n");
+}
+
+void linkedListTest()
+{
+    LinkedList test;
+    int i;
+
+    initializeLinkedList(&test);
+
+    for (i = 0; i < 100; i++)
+        insertLinkedList(&test, i, i);
+
+    printLinkedList(&test);
+
+    destroyLinkedList(&test);
 }

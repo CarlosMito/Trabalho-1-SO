@@ -18,9 +18,6 @@ void initializeCPU(CPU *cpu)
  *     [INSTRUCTION_EXECUTED]: Comando executado normalmente, nenhuma
  *     medida adicional é necessária.
  * 
- *     [INSTRUCTION_OUT_OF_RANGE]: Não há instruções restantes para
- *     executar.
- * 
  *     [FORK_PROCESS]: Processo bifurcado.
  *     [CHANGE_PROCESS]: Troca de imagem para outro processo.
  *     [BLOCK_PROCESS]: Processo bloqueado.
@@ -28,7 +25,7 @@ void initializeCPU(CPU *cpu)
  * 
  * @param cpu Ponteiro para a CPU.
  * @param list Lista com os PCB's não finalizados.
- * @param nextID Número para o próximo ID válido.
+ * @param nextID Número do próximo ID válido.
  * @param systemTime Tempo atual do sistema.
  * @return Dependendo do comando que foi processado e de seu resultado,
  * diferentes sinais de status são retornados.
@@ -40,7 +37,7 @@ int executeCPU(CPU *cpu, PCBList *list, int nextID, int systemTime)
     char path[MAX_PATH_LENGTH];
 
     if (cpu->pcb->pc < 0 || cpu->pcb->pc >= cpu->pcb->program.size)
-        return INSTRUCTION_OUT_OF_RANGE;
+        return TERMINATE_PROCESS;
 
     // Incrementa o tempo de uso da CPU após uma tentativa de execução de uma instrução.
     (cpu->processTime)++;
