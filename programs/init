@@ -1,14 +1,7 @@
 S 0
-F 10
-A 1
-A 1
-D 1
-A 1
-F 1
-R p1
-B
-F 1
-R p2
 F 1
 R p3
+B
+A 10
+D 4
 E

@@ -48,6 +48,9 @@ void processCommands(Manager *manager);
 void printRepeat(char character, int times, bool breakline);
 void printTitle(char *title, bool vspace);
 void printFromList(PCBList *table, LinkedList *list);
+void printHelp();
+void printWrap(char *longText, int lineLength);
+void printWelcome();
 void report(Manager *manager);
 void destroyManager(Manager *manager);
 

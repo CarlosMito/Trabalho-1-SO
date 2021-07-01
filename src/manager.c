@@ -4,15 +4,15 @@ int main()
 {
     Manager manager;
 
+    printf("[Process Manager] Iniciado!\n");
     initializeManager(&manager);
-    printf("Process Manager: Begin\n");
+
+    printWelcome();
 
     processCommands(&manager);
 
-    // linkedListTest();
-
     destroyManager(&manager);
-    printf("Process Manager: End\n");
+    printf("[Process Manager] Encerrado com sucesso!\n");
 
     return 0;
 }
@@ -22,7 +22,7 @@ int main()
  * 
  * @details Inicializa todas as estruturas de dados necessárias, configura
  * o tempo do sistema para 0, modifica o próximo ID para 1, inicia o
- * processo [init], e o coloca na CPU
+ * processo [init], e o coloca na CPU.
  */
 void initializeManager(Manager *manager)
 {
@@ -41,10 +41,11 @@ void initializeManager(Manager *manager)
     initializeLinkedList(manager->ready);
     initializeLinkedList(manager->blocked);
     initializeLinkedList(manager->ids);
+    printf("[Process Manager] Estruturas de dados inicializadas!\n");
 
     manager->nextID = 1;
-
     init = initializePCBFromFile("programs/init");
+    printf("[Process Manager] Primeiro processo simulado criado!\n\n");
 
     insertPCB(manager->list, init);
     changeContext(manager, 0);
@@ -64,7 +65,7 @@ void changeContext(Manager *manager, int pid)
     if (pid < 0)
         return;
 
-    printf("Colocando processo na CPU: (PID = %d)\n", pid);
+    printf("(PID = %d) Assumiu a CPU! \n", pid);
 
     manager->executing = pid;
     target = manager->list->pcbs[pid];
@@ -189,23 +190,29 @@ void processCommands(Manager *manager)
         // Lê os comandos do descritor de leitura padrão
         // Equivale ao [pipefd[0]] devido ao comando [dup2] em [commander]
         scanf("%c", &input);
-        input = toupper(input);
 
         switch (input)
         {
         case 'Q':
+            (manager->time)++;
+
             // CPU vazia
             if (!manager->cpu->pcb)
             {
                 // Nenhum processo pronto
                 if (firstLinkedList(manager->ready) == -1)
                 {
-                    // Nenhum processo no sistema
+                    printf("CPU vazia! ");
+
                     if (firstLinkedList(manager->blocked) == -1)
-                        printf("Não há nenhum processo no sistema!\n");
-                    // Há somente processos bloqueados
+                    {
+                        // Todos os processos foram finalizados
+                        printf("Não há nenhum processo restante no sistema!\n\n");
+                        manager->time--;
+                    }
                     else
-                        printf("Não há processos prontos no momento!\n");
+                        // Há somente processos bloqueados
+                        printf("Não há processos prontos no momento!\n\n");
 
                     continue;
                 }
@@ -218,8 +225,6 @@ void processCommands(Manager *manager)
             // Executa a próxima instrução do processo na CPU
             status = executeCPU(manager->cpu, manager->list, manager->nextID, manager->time);
 
-            (manager->time)++;
-
             switch (status)
             {
             case EXIT_SUCCESS:
@@ -227,17 +232,21 @@ void processCommands(Manager *manager)
 
             // Insere o ID da cópia instantânea na lista de processos prontos
             case FORK_PROCESS:
+                printf("(PID = %d) Foi criado!\n", manager->nextID);
+
                 // Houve uma realocação de PIDs cujos processos já foram terminados
                 if (manager->nextID != manager->list->length)
                     pollLinkedList(manager->ids);
 
                 insertLinkedList(manager->ready, manager->nextID, manager->list->pcbs[manager->nextID]->priority);
-                manager->nextID = NEXT_ID(manager->list->length, firstLinkedList(manager->ids));
                 clearIDList(manager->list, manager->ids);
+
+                manager->nextID = NEXT_ID(manager->list->length, firstLinkedList(manager->ids));
                 break;
 
             // Insere o processo atual na lista de processos bloqueados
             case BLOCK_PROCESS:
+                printf("(PID = %d) Processo bloqueado!\n", manager->cpu->pcb->pid);
                 insertLinkedList(manager->blocked, manager->cpu->pcb->pid, 0);
                 initializeCPU(manager->cpu);
                 break;
@@ -247,6 +256,8 @@ void processCommands(Manager *manager)
                 // Caso o ID do processo finalizado seja diferente de 0,
                 if (manager->executing)
                 {
+                    printf("(PID = %d) Processo finalizado!\n", manager->cpu->pcb->pid);
+
                     // O PID é adicionado na lista dos IDs que serão realocados
                     insertLinkedList(manager->ids, manager->executing, manager->executing);
 
@@ -262,10 +273,9 @@ void processCommands(Manager *manager)
                 }
 
                 initializeCPU(manager->cpu);
+                clearIDList(manager->list, manager->ids);
 
                 manager->nextID = NEXT_ID(manager->list->length, firstLinkedList(manager->ids));
-
-                clearIDList(manager->list, manager->ids);
                 break;
 
             case UNKNOWN_COMMAND:
@@ -285,10 +295,12 @@ void processCommands(Manager *manager)
             if (auxiliarID == -1)
             {
                 printf("Não há processos bloqueados no momento!\n");
-                continue;
             }
-
-            insertLinkedList(manager->ready, auxiliarID, manager->list->pcbs[auxiliarID]->priority);
+            else
+            {
+                printf("(PID = %d) Processo desbloqueado!\n", auxiliarID);
+                insertLinkedList(manager->ready, auxiliarID, manager->list->pcbs[auxiliarID]->priority);
+            }
 
             break;
 
@@ -305,9 +317,16 @@ void processCommands(Manager *manager)
             input = 'T';
             break;
 
+        case 'H':
+            printHelp();
+            break;
+
         default:
+            printf("Comando não reconhecido! Mande H para obter ajuda!\n");
             break;
         }
+
+        printf("\n");
     } while (input != 'T');
 }
 
@@ -364,6 +383,95 @@ void printFromList(PCBList *table, LinkedList *list)
 }
 
 /**
+ * @brief Imprime a lista de comandos aceitos pelo sistema.
+ */
+void printHelp()
+{
+    printf("\n");
+    printRepeat('=', LINE_LENGTH, true);
+    printTitle("LISTA DE COMANDOS", false);
+    printRepeat('=', LINE_LENGTH, true);
+
+    printf("Q: Fim de uma unidade de tempo\n");
+    printf("U: Desbloqueia um processo\n");
+    printf("P: Imprime o estado atual do sistema\n");
+    printf("T: Finaliza o simulador\n");
+
+    printRepeat('=', LINE_LENGTH, true);
+}
+
+/**
+ * @brief Imprime [longText] limitando cada linha em [lineLength]
+ * caracteres.
+ * 
+ * @param longText Texto que será impresso.
+ * @param lineLength Quantidade máxima de caracteres por linha.
+ */
+void printWrap(char *longText, const int lineLength)
+{
+    const char specialCharacters[] = "ãáàâéêíóõôú";
+    char line[lineLength + 1];
+    int counter;
+    int i, j;
+
+    i = 0;
+    j = 0;
+    counter = 0;
+
+    while (longText[i] != '\0')
+    {
+        // Imprime a linha contabilizada
+        if (counter >= lineLength)
+        {
+            line[j] = '\0';
+            j = 0;
+            counter = 0;
+            printf("%s\n", line);
+            line[0] = '\0';
+            continue;
+        }
+
+        // Elimina espaços no começo da linha
+        if (!counter && longText[i] == ' ')
+            continue;
+
+        // É um caractere acentuado
+        if (strchr(specialCharacters, longText[i]))
+        {
+            line[j++] = longText[i++];
+            line[j++] = longText[i++];
+
+            counter++;
+            continue;
+        }
+
+        line[j++] = longText[i++];
+        counter++;
+    }
+
+    line[j] = '\0';
+
+    if (line[0] != '\0')
+        printf("%s\n", line);
+}
+
+/**
+ * @brief Imprime uma mensagem apresentando o sistema.
+ */
+void printWelcome()
+{
+    char welcomeMessage[] = "Esse programa tem como objetivo dar uma visão geral, através de uma simulação, de como ocorre a execução de processos em uma CPU, bem como as estratégias utilizadas para a atuação de múltiplos processos.\n";
+    // char welcomeMessage[] = "ããããã";
+
+    printf("\n");
+    printRepeat('=', LINE_LENGTH, true);
+    printTitle("SIMULADOR DE GERENCIAMENTO DE PROCESSOS", false);
+    printRepeat('=', LINE_LENGTH, true);
+
+    printWrap(welcomeMessage, LINE_LENGTH);
+}
+
+/**
  * @brief Cria um novo processo para imprimir o estado atual de [manager],
  * em seguida, o mesmo é finalizado.
  * 
@@ -382,7 +490,8 @@ void report(Manager *manager)
     /* PROCESSO FILHO */
     if (cpid == 0)
     {
-        printf("Reporter: Begin\n");
+        printf("\n");
+        printf("[Reporter] Iniciado!\n");
         printRepeat('=', LINE_LENGTH, true);
         printTitle("ESTADO DO SISTEMA", false);
         printRepeat('=', LINE_LENGTH, true);
@@ -402,7 +511,8 @@ void report(Manager *manager)
         printf("\n");
 
         printRepeat('=', LINE_LENGTH, true);
-        printf("Reporter: End\n");
+        printf("[Reporter] Encerrado com sucesso!\n");
+
         exit(EXIT_SUCCESS);
     }
 }

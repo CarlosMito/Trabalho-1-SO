@@ -45,6 +45,9 @@ int executeCPU(CPU *cpu, PCBList *list, int nextID, int systemTime)
 
     current = cpu->pcb->program.instructions[cpu->pcb->pc];
 
+    printf("(PID = %d) Comando executado: %c ", cpu->pcb->pid, current.command);
+    current.string ? printf("%s\n", current.string) : printf("%d\n", current.integer);
+
     switch (current.command)
     {
     case 'S':
@@ -64,7 +67,7 @@ int executeCPU(CPU *cpu, PCBList *list, int nextID, int systemTime)
         forked = (PCB *)malloc(sizeof(PCB));
 
         forked->pid = nextID;
-        forked->startTime = systemTime + 1;
+        forked->startTime = systemTime;
         forked->ppid = cpu->pcb->pid;
         forked->cpuTime = 0;
         forked->pc = cpu->pcb->pc + 1;
@@ -122,7 +125,7 @@ void printCPU(CPU *cpu)
 {
     if (!cpu->pcb)
     {
-        printf("CPU VAZIA!\n");
+        printf("CPU vazia!\n");
         return;
     }
 
