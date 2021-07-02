@@ -5,14 +5,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include <stdbool.h>
 
 int main(int argc, char *argv[])
 {
     char input[256];
     int pipefd[2];
-    bool childAlive;
-    int status;
     pid_t cpid;
 
     printf("[Commander] Iniciado!\n");
@@ -42,7 +39,6 @@ int main(int argc, char *argv[])
     /* PROCESSO PAI */
     else
     {
-        childAlive = true;
         close(pipefd[0]); /* Fecha o terminal de leitura */
 
         do
@@ -58,17 +54,7 @@ int main(int argc, char *argv[])
                 input[i] = toupper(input[i]);
                 write(pipefd[1], input + i, 1);
             }
-
-            if (waitpid(cpid, &status, WNOHANG) == cpid)
-                if (WIFEXITED(status) || WIFSIGNALED(status))
-                    childAlive = false;
-
-            if (!childAlive)
-            {
-                printf("Isso deu certo?\n");
-            }
-
-        } while (strstr(input, "T") == NULL && childAlive);
+        } while (strstr(input, "T") == NULL);
 
         close(pipefd[1]); /* Fecha o terminal de escrita */
         printf("[Commander] Encerrado com sucesso!\n");
@@ -93,7 +79,7 @@ int main(int argc, char *argv[])
  * 
  *    - O estado de um processo é composto pelo valor da variável e o PC.
  *
- * 
+ * Fazer testes com [time] no terminal do linux.
  * 
  * 
  * 
