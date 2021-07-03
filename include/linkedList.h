@@ -41,6 +41,7 @@ typedef struct
 
 void initializeLinkedList(LinkedList *list);
 void insertLinkedList(LinkedList *list, int id, int value);
+void appendLinkedList(LinkedList *list, int id, int value);
 int pollLinkedList(LinkedList *list);
 void clearLinkedList(LinkedList *list);
 int firstLinkedList(LinkedList *list);

@@ -16,6 +16,8 @@ void initializeLinkedList(LinkedList *list)
  * lista depende de [value].
  * 
  * @param list Ponteiro para a lista encadeada alvo.
+ * @param id Identificador do nó.
+ * @param value Prioridade do nó na lista.
  */
 void insertLinkedList(LinkedList *list, int id, int value)
 {
@@ -26,7 +28,7 @@ void insertLinkedList(LinkedList *list, int id, int value)
     node->id = id;
     node->next = NULL;
 
-    // Caso a lista esteja vazia
+    /* Caso a lista esteja vazia */
     if (!list->length)
     {
         list->first = node;
@@ -40,20 +42,20 @@ void insertLinkedList(LinkedList *list, int id, int value)
 
     while (header)
     {
-        // [node] é inserido antes de [header]
+        /* [node] é inserido antes de [header] */
         if (header->value > node->value)
         {
             node->next = header;
             list->length++;
 
-            // [node] é inserido no começo da lista
+            /* [node] é inserido no começo da lista */
             if (header == list->first)
             {
                 list->first = node;
                 return;
             }
 
-            // [node] é inserido entre 2 elementos
+            /* [node] é inserido entre 2 elementos */
             lastHeader->next = node;
             return;
         }
@@ -62,9 +64,41 @@ void insertLinkedList(LinkedList *list, int id, int value)
         header = header->next;
     }
 
-    // [node] é inserido na última posição da lista
+    /* [node] é inserido na última posição da lista */
     list->last->next = node;
     list->last = node;
+    list->length++;
+}
+
+/**
+ * @brief Insere um novo [Node] (com ID correspondente à [id] e valor
+ * equivalente à [value]) na última posição de [list].
+ * 
+ * @param list Ponteiro para a lista encadeada alvo.
+ * @param id Identificador do nó.
+ * @param value Prioridade do nó na lista.
+ */
+void appendLinkedList(LinkedList *list, int id, int value)
+{
+    Node *header, *node;
+
+    node = (Node *)malloc(sizeof(Node));
+    node->value = value;
+    node->id = id;
+    node->next = NULL;
+
+    header = list->last;
+    list->last = node;
+
+    /* A lista está vazia */
+    if (!header)
+    {
+        list->first = node;
+        list->length = 1;
+        return;
+    }
+
+    header->next = node;
     list->length++;
 }
 
@@ -79,11 +113,11 @@ int pollLinkedList(LinkedList *list)
     Node *auxiliar;
     int id;
 
-    // Caso a lista esteja vazia
+    /* Caso a lista esteja vazia */
     if (!list->length)
         return -1;
 
-    // Caso a lista tenha apenas 1 elemento
+    /* Caso a lista tenha apenas 1 elemento */
     if (list->length == 1)
     {
         id = list->first->id;
@@ -97,7 +131,7 @@ int pollLinkedList(LinkedList *list)
         return id;
     }
 
-    // A lista possui 2 ou mais elementos
+    /* A lista possui 2 ou mais elementos */
     id = list->first->id;
     auxiliar = list->first;
     list->first = list->first->next;
@@ -143,7 +177,7 @@ void clearLinkedList(LinkedList *list)
  */
 int firstLinkedList(LinkedList *list)
 {
-    // Caso a lista esteja vazia
+    /* Caso a lista esteja vazia */
     if (!list->length)
         return -1;
 
@@ -162,10 +196,9 @@ int firstLinkedList(LinkedList *list)
 int *linkedListToArray(LinkedList *list, int *array)
 {
     Node *current;
-    int i;
+    int i = 0;
 
     current = list->first;
-    i = 0;
 
     while (current)
     {
@@ -183,7 +216,7 @@ void printLinkedList(LinkedList *list)
 {
     Node *header;
 
-    // Caso a lista esteja vazia
+    /* Caso a lista esteja vazia */
     if (!list->length)
         return;
 

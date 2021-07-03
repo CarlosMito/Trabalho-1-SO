@@ -1,5 +1,7 @@
 #include "../include/manager.h"
 
+#include "time.h"
+
 int main()
 {
     Manager manager;
@@ -89,20 +91,20 @@ void changeContext(Manager *manager, int pid)
  */
 int schedule(Manager *manager)
 {
-    int idSRT, cpuPriority, readyPriority;
+    int idSRT;
 
-    // Caso a CPU esteja vazia, retorna o ID do primeiro processo pronto
+    /* Caso a CPU esteja vazia, retorna o ID do primeiro processo pronto */
     if (!manager->cpu->pcb)
         return pollLinkedList(manager->ready);
 
     idSRT = firstLinkedList(manager->ready);
 
-    // Caso a lista de processos prontos não esteja vazia, realiza um escalonamento
-    // preemptivo com base no tempo de execução restante dos processos
+    /* Caso a lista de processos prontos não esteja vazia, realiza um escalonamento */
+    /* preemptivo com base no tempo de execução restante dos processos */
     if (idSRT != -1)
     {
-        cpuPriority = manager->cpu->pcb->priority;
-        readyPriority = manager->list->pcbs[idSRT]->priority;
+        int cpuPriority = manager->cpu->pcb->priority;
+        int readyPriority = manager->list->pcbs[idSRT]->priority;
 
         if (readyPriority < cpuPriority)
         {
@@ -187,8 +189,8 @@ void processCommands(Manager *manager)
 
     do
     {
-        // Lê os comandos do descritor de leitura padrão
-        // Equivale ao [pipefd[0]] devido ao comando [dup2] em [commander]
+        /* Lê os comandos do descritor de leitura padrão */
+        /* Equivale ao [pipefd[0]] devido ao comando [dup2] em [commander] */
         scanf("%c", &input);
 
         switch (input)
@@ -196,33 +198,33 @@ void processCommands(Manager *manager)
         case 'Q':
             (manager->time)++;
 
-            // CPU vazia
+            /* CPU vazia */
             if (!manager->cpu->pcb)
             {
-                // Nenhum processo pronto
+                /* Nenhum processo pronto */
                 if (firstLinkedList(manager->ready) == -1)
                 {
                     printf("CPU vazia! ");
 
                     if (firstLinkedList(manager->blocked) == -1)
                     {
-                        // Todos os processos foram finalizados
+                        /* Todos os processos foram finalizados */
                         printf("Não há nenhum processo restante no sistema!\n\n");
                         manager->time--;
                     }
                     else
-                        // Há somente processos bloqueados
+                        /* Há somente processos bloqueados */
                         printf("Não há processos prontos no momento!\n\n");
 
                     continue;
                 }
 
-                // Troca de contexto para o processo selecionado pela função de escalonamento
+                /* Troca de contexto para o processo selecionado pela função de escalonamento */
                 auxiliarID = schedule(manager);
                 changeContext(manager, auxiliarID);
             }
 
-            // Executa a próxima instrução do processo na CPU
+            /* Executa a próxima instrução do processo na CPU */
             status = executeCPU(manager->cpu, manager->list, manager->nextID, manager->time);
 
             switch (status)
@@ -230,11 +232,11 @@ void processCommands(Manager *manager)
             case EXIT_SUCCESS:
                 break;
 
-            // Insere o ID da cópia instantânea na lista de processos prontos
+            /* Insere o ID da cópia instantânea na lista de processos prontos */
             case FORK_PROCESS:
                 printf("(PID = %d) Foi criado!\n", manager->nextID);
 
-                // Houve uma realocação de PIDs cujos processos já foram terminados
+                /* Houve uma realocação de PIDs cujos processos já foram terminados */
                 if (manager->nextID != manager->list->length)
                     pollLinkedList(manager->ids);
 
@@ -244,29 +246,29 @@ void processCommands(Manager *manager)
                 manager->nextID = NEXT_ID(manager->list->length, firstLinkedList(manager->ids));
                 break;
 
-            // Insere o processo atual na lista de processos bloqueados
+            /* Insere o processo atual na lista de processos bloqueados */
             case BLOCK_PROCESS:
                 printf("(PID = %d) Processo bloqueado!\n", manager->cpu->pcb->pid);
-                insertLinkedList(manager->blocked, manager->cpu->pcb->pid, 0);
+                appendLinkedList(manager->blocked, manager->cpu->pcb->pid, 0);
                 initializeCPU(manager->cpu);
                 break;
 
-            // Insere o processo atual na lista de processos bloqueados
+            /* Insere o processo atual na lista de processos bloqueados */
             case TERMINATE_PROCESS:
-                // Caso o ID do processo finalizado seja diferente de 0,
+                /* Caso o ID do processo finalizado seja diferente de 0, */
                 if (manager->executing)
                 {
                     printf("(PID = %d) Processo finalizado!\n", manager->cpu->pcb->pid);
 
-                    // O PID é adicionado na lista dos IDs que serão realocados
+                    /* O PID é adicionado na lista dos IDs que serão realocados */
                     insertLinkedList(manager->ids, manager->executing, manager->executing);
 
-                    // O [ppid] dos processos que eram filhos do processo que acabou de terminar
-                    // é alterado para o PID do processo [init], que é 0.
+                    /* O [ppid] dos processos que eram filhos do processo que acabou de terminar */
+                    /* é alterado para o PID do processo [init], que é 0. */
                     adjustPPID(manager->list, manager->ready, manager->executing);
                     adjustPPID(manager->list, manager->blocked, manager->executing);
 
-                    // Desaloca a memória do processo finalizado
+                    /* Desaloca a memória do processo finalizado */
                     destroyPCB(manager->list->pcbs[manager->executing]);
                     manager->list->pcbs[manager->executing] = NULL;
                     (manager->list->length)--;
@@ -289,7 +291,7 @@ void processCommands(Manager *manager)
             break;
 
         case 'U':
-            // Altera o estado do primeiro processo na fila de bloqueados para pronto
+            /* Altera o estado do primeiro processo na fila de bloqueados para pronto */
             auxiliarID = pollLinkedList(manager->blocked);
 
             if (auxiliarID == -1)
@@ -305,13 +307,13 @@ void processCommands(Manager *manager)
             break;
 
         case 'P':
-            // Bifurca esse processo e executa [reporter]
+            /* Bifurca esse processo e executa [reporter] */
             report(manager);
             wait(NULL);
             break;
 
         case 'T':
-            // Bifurca, executa [reporter] e termina [manager] após [reporter] terminar
+            /* Bifurca, executa [reporter] e termina [manager] após [reporter] terminar */
             report(manager);
             wait(NULL);
             input = 'T';
@@ -356,11 +358,13 @@ void printRepeat(char character, int times, bool breakline)
  */
 void printTitle(char *title, bool vspace)
 {
+    int freeSpace;
+
     if (vspace)
         printf("\n");
 
-    // O +1 serve para "arredondar para cima"
-    int freeSpace = LINE_LENGTH - strlen(title) + 1;
+    /* O +1 serve para "arredondar para cima" */
+    freeSpace = LINE_LENGTH - strlen(title) + 1;
     printRepeat(' ', freeSpace / 2, false);
     printf("%s\n", title);
 }
@@ -374,12 +378,17 @@ void printTitle(char *title, bool vspace)
 void printFromList(PCBList *table, LinkedList *list)
 {
     const int length = list->length;
-    int array[length];
+    int *array;
+    int i;
+
+    array = (int *)malloc(sizeof(int) * length);
 
     linkedListToArray(list, array);
 
-    for (int i = 0; i < length; i++)
+    for (i = 0; i < length; i++)
         printPCB(table->pcbs[array[i]]);
+
+    free(array);
 }
 
 /**
@@ -410,17 +419,19 @@ void printHelp()
 void printWrap(char *longText, const int lineLength)
 {
     const char specialCharacters[] = "ãáàâéêíóõôú";
-    char line[lineLength + 1];
+    char *line;
     int counter;
     int i, j;
 
-    i = 0;
-    j = 0;
-    counter = 0;
+    i = 0, j = 0, counter = 0;
+
+    /* +1 devido ao caractere de terminação \0 */
+    /* x2 pois os caracteres acentuados ocupam mais que um caracetere */
+    line = (char *)malloc(sizeof(char) * lineLength * 2 + 1);
 
     while (longText[i] != '\0')
     {
-        // Imprime a linha contabilizada
+        /* Imprime a linha contabilizada */
         if (counter >= lineLength)
         {
             line[j] = '\0';
@@ -431,11 +442,11 @@ void printWrap(char *longText, const int lineLength)
             continue;
         }
 
-        // Elimina espaços no começo da linha
+        /* Elimina espaços no começo da linha */
         if (!counter && longText[i] == ' ')
             continue;
 
-        // É um caractere acentuado
+        /* É um caractere acentuado */
         if (strchr(specialCharacters, longText[i]))
         {
             line[j++] = longText[i++];
@@ -453,6 +464,8 @@ void printWrap(char *longText, const int lineLength)
 
     if (line[0] != '\0')
         printf("%s\n", line);
+
+    free(line);
 }
 
 /**
@@ -461,7 +474,6 @@ void printWrap(char *longText, const int lineLength)
 void printWelcome()
 {
     char welcomeMessage[] = "Esse programa tem como objetivo dar uma visão geral, através de uma simulação, de como ocorre a execução de processos em uma CPU, bem como as estratégias utilizadas para a atuação de múltiplos processos.\n";
-    // char welcomeMessage[] = "ããããã";
 
     printf("\n");
     printRepeat('=', LINE_LENGTH, true);
@@ -532,33 +544,4 @@ void destroyManager(Manager *manager)
     free(manager->ready);
     free(manager->blocked);
     free(manager->ids);
-}
-
-void debug(Manager *manager)
-{
-    printf("READY: ");
-    printLinkedList(manager->ready);
-    printf("BLOCKED: ");
-    printLinkedList(manager->blocked);
-    printf("IDS: ");
-    printLinkedList(manager->ids);
-
-    printf("NEXT ID: %d", manager->nextID);
-
-    printf("\n");
-}
-
-void linkedListTest()
-{
-    LinkedList test;
-    int i;
-
-    initializeLinkedList(&test);
-
-    for (i = 0; i < 100; i++)
-        insertLinkedList(&test, i, i);
-
-    printLinkedList(&test);
-
-    destroyLinkedList(&test);
 }

@@ -6,11 +6,12 @@
 #include <string.h>
 #include <ctype.h>
 
-int main(int argc, char *argv[])
+int main()
 {
     char input[256];
     int pipefd[2];
     pid_t cpid;
+    size_t i;
 
     printf("[Commander] Iniciado!\n");
 
@@ -49,7 +50,7 @@ int main(int argc, char *argv[])
             scanf("%[^\n]s", input);
             getchar();
 
-            for (int i = 0; i < strlen(input); i++)
+            for (i = 0; i < strlen(input); i++)
             {
                 input[i] = toupper(input[i]);
                 write(pipefd[1], input + i, 1);

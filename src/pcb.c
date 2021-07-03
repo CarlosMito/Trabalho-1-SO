@@ -14,7 +14,7 @@ PCB *initializePCBFromFile(char *path)
 {
     PCB *pcb;
 
-    pcb = (PCB *)malloc(sizeof(PCB));
+    pcb = (PCB *)calloc(1, sizeof(PCB));
     pcb->program = parseFile(path);
 
     pcb->priority = pcb->program.size;
@@ -57,7 +57,7 @@ void initializePCBList(PCBList *list)
 {
     list->length = 0;
     list->expanded = 1;
-    list->pcbs = (PCB **)malloc(sizeof(PCB *) * DEFAULT_LIST_LENGTH);
+    list->pcbs = (PCB **)calloc(DEFAULT_LIST_LENGTH, sizeof(PCB *));
 }
 
 /**
@@ -76,19 +76,24 @@ void initializePCBList(PCBList *list)
  */
 int insertPCB(PCBList *list, PCB *pcb)
 {
-    // PID inválido
+    /* PID inválido */
     if (pcb->pid < 0)
         return -1;
 
-    // Expande a lista caso a mesma não consiga armazenar [pcb]
+    /* Expande a lista caso a mesma não consiga armazenar [pcb] */
     if (pcb->pid >= list->expanded * DEFAULT_LIST_LENGTH)
     {
-        int total = ++(list->expanded) * DEFAULT_LIST_LENGTH;
+        int total, i;
+
+        total = ++(list->expanded) * DEFAULT_LIST_LENGTH;
         list->pcbs = (PCB **)realloc(list->pcbs, sizeof(PCB *) * total);
+
+        for (i = total - DEFAULT_LIST_LENGTH; i < total; i++)
+            list->pcbs = NULL;
     }
 
     list->pcbs[pcb->pid] = pcb;
-    (list->length)++;
+    list->length++;
     return 0;
 }
 
@@ -97,7 +102,9 @@ int insertPCB(PCBList *list, PCB *pcb)
  */
 void printPCBList(PCBList *list)
 {
-    for (int i = 0; i < list->expanded * DEFAULT_LIST_LENGTH; i++)
+    int i;
+
+    for (i = 0; i < list->expanded * DEFAULT_LIST_LENGTH; i++)
         printPCB(list->pcbs[i]);
 }
 
@@ -106,8 +113,10 @@ void printPCBList(PCBList *list)
  */
 void destroyPCBList(PCBList *list)
 {
-    // Itera sobre todos os índices da lista
-    for (int i = 0; i < list->expanded * DEFAULT_LIST_LENGTH; i++)
+    int i;
+
+    /* Itera sobre todos os índices da lista */
+    for (i = 0; i < list->expanded * DEFAULT_LIST_LENGTH; i++)
         destroyPCB(list->pcbs[i]);
 
     free(list->pcbs);

@@ -1,6 +1,10 @@
 S 0
 F 1
 R p3
+F 1
+R p2
+F 1
+R p4
 B
 A 10
 D 4

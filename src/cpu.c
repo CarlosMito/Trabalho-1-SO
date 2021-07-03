@@ -39,7 +39,7 @@ int executeCPU(CPU *cpu, PCBList *list, int nextID, int systemTime)
     if (cpu->pcb->pc < 0 || cpu->pcb->pc >= cpu->pcb->program.size)
         return TERMINATE_PROCESS;
 
-    // Incrementa o tempo de uso da CPU após uma tentativa de execução de uma instrução.
+    /* Incrementa o tempo de uso da CPU após uma tentativa de execução de uma instrução. */
     (cpu->processTime)++;
     (cpu->pcb->cpuTime)++;
 
@@ -63,7 +63,7 @@ int executeCPU(CPU *cpu, PCBList *list, int nextID, int systemTime)
         break;
 
     case 'F':
-        // Bifurca o processo
+        /* Bifurca o processo */
         forked = (PCB *)malloc(sizeof(PCB));
 
         forked->pid = nextID;
@@ -85,11 +85,11 @@ int executeCPU(CPU *cpu, PCBList *list, int nextID, int systemTime)
         return FORK_PROCESS;
 
     case 'R':
-        // Troca de imagem
+        /* Troca de imagem */
         strcpy(path, DEFAULT_PATH);
         strcat(path, current.string);
 
-        // Destrói o programa anterior
+        /* Destrói o programa anterior */
         destroyProgram(&(cpu->pcb->program));
 
         cpu->pcb->program = parseFile(path);
@@ -111,7 +111,7 @@ int executeCPU(CPU *cpu, PCBList *list, int nextID, int systemTime)
         return UNKNOWN_COMMAND;
     }
 
-    // Incrementa o Contador de Programa e diminui a Prioridade após uma instrução
+    /* Incrementa o Contador de Programa e diminui a Prioridade após uma instrução */
     cpu->pcb->pc++;
     cpu->pcb->priority = cpu->pcb->program.size - cpu->pcb->pc;
 

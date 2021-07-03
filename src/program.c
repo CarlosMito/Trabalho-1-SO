@@ -47,6 +47,7 @@ Program initializeProgram()
 Instruction parseLine(char *line, int length)
 {
     Instruction instruction;
+    char *argument;
 
     instruction = initializeInstruction();
 
@@ -58,11 +59,11 @@ Instruction parseLine(char *line, int length)
     if (line[1] == '\0')
         return instruction;
 
-    char *argument = &(line[2]);
+    argument = &(line[2]);
 
     if (instruction.command == 'R')
     {
-        instruction.string = (char *)malloc(sizeof(char) * (length - 2));
+        instruction.string = (char *)malloc(sizeof(char) * (length - 1));
         strcpy(instruction.string, argument);
     }
 
@@ -154,6 +155,8 @@ Program parseFile(char *path)
         line[0] = '\0';
     }
 
+    fclose(file);
+
     program = initializeProgram();
     program.size = total;
     program.instructions = instructions;
@@ -172,10 +175,11 @@ Instruction copyInstruction(Instruction *original)
     copy.integer = original->integer;
     copy.string = NULL;
 
-    // Caso não seja nula
+    /* Caso não seja nula */
     if (original->string)
     {
-        copy.string = (char *)malloc(sizeof(char) * strlen(original->string));
+        /* +1 para adicionar o caractere \0 */
+        copy.string = (char *)malloc(sizeof(char) * strlen(original->string) + 1);
         strcpy(copy.string, original->string);
     }
 
@@ -188,11 +192,12 @@ Instruction copyInstruction(Instruction *original)
 Program copyProgram(Program *original)
 {
     Program copy;
+    int i;
 
     copy.size = original->size;
     copy.instructions = (Instruction *)malloc(sizeof(Instruction) * copy.size);
 
-    for (int i = 0; i < original->size; i++)
+    for (i = 0; i < original->size; i++)
         copy.instructions[i] = copyInstruction(&(original->instructions[i]));
 
     return copy;
@@ -222,9 +227,12 @@ void printInstruction(Instruction *instruction)
  */
 void printProgram(Program *program)
 {
+    int i;
+
     printf("Número de Instruções: %d\n", program->size);
     printf("Instruções:\n");
-    for (int i = 0; i < program->size; i++)
+
+    for (i = 0; i < program->size; i++)
     {
         printf("  %4d - ", i);
         printInstruction(&(program->instructions[i]));
@@ -236,7 +244,8 @@ void printProgram(Program *program)
  */
 void destroyProgram(Program *program)
 {
-    for (int i = 0; i < program->size; i++)
+    int i;
+    for (i = 0; i < program->size; i++)
         free(program->instructions[i].string);
 
     free(program->instructions);
