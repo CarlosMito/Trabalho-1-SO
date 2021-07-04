@@ -34,7 +34,7 @@ int main()
         dup2(pipefd[0], STDIN_FILENO); /* O filho lerá de [pipefd[0]] quando tentar ler do teclado */
         close(pipefd[0]);              /* Fecha o terminal de leitura */
 
-        execlp("./manager.exe", "./manager.exe", NULL);
+        execlp("./manager", "./manager", NULL);
     }
 
     /* PROCESSO PAI */
